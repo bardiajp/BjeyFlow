@@ -17,7 +17,7 @@ import { axiosInstance } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const schema = z.object({
-    email: z.string().email("Invalid email address"),
+    username: z.string().min(1, "Username is required"),
     password: z.string().min(1, "Password is required"),
 });
 
@@ -40,7 +40,7 @@ export default function LoginForm() {
         setIsSubmitting(true);
         try {
             await axiosInstance.post("/users/auth/login/", {
-                email: data.email,
+                username: data.username,
                 password: data.password,
             });
         } catch (err: any) {
@@ -68,16 +68,16 @@ export default function LoginForm() {
                         </div>
                     )}
                     <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="username">Username</Label>
                         <Input
-                            id="email"
-                            type="email"
-                            placeholder="example@mail.com"
-                            {...register("email")}
-                            className={cn(errors.email && "border-destructive")}
+                            id="username"
+                            type="text"
+                            placeholder="Username"
+                            {...register("username")}
+                            className={cn(errors.username && "border-destructive")}
                         />
-                        {errors.email && (
-                            <p className="text-xs text-destructive">{errors.email.message}</p>
+                        {errors.username && (
+                            <p className="text-xs text-destructive">{errors.username.message}</p>
                         )}
                     </div>
                     <div className="space-y-2">

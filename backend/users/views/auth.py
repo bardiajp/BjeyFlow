@@ -26,7 +26,7 @@ class LoginView(TokenObtainPairView):
             {
                 "user": {
                     "id": str(user.id),
-                    "email": user.email,
+                    "username": user.username,
                     "display_name": user.display_name,
                 },
             },
@@ -61,7 +61,7 @@ class MeView(APIView):
             {
                 "user": {
                     "id": str(request.user.id),
-                    "email": request.user.email,
+                    "username": request.user.username,
                     "display_name": request.user.display_name,
                 },
             }

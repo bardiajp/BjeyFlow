@@ -62,16 +62,16 @@ format: ## Format backend code with black
 # ─── Django ──────────────────────────────────────────────────────────
 
 migrate: ## Run Django migrations
-	cd backend && python manage.py migrate
+	cd backend && python3 manage.py migrate
 
 makemigrations: ## Create new Django migrations
-	cd backend && python manage.py makemigrations
+	cd backend && python3 manage.py makemigrations
 
 superuser: ## Create Django superuser
-	cd backend && python manage.py createsuperuser
+	cd backend && python3 manage.py createsuperuser
 
 shell: ## Open Django shell_plus
-	cd backend && python manage.py shell_plus
+	cd backend && python3 manage.py shell_plus
 
 # ─── Docker ──────────────────────────────────────────────────────────
 

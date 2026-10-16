@@ -1,55 +1,39 @@
-import js from "@eslint/js";
-import reactPlugin from "eslint-plugin-react";
 import globals from "globals";
-import tseslint from "@typescript-eslint/eslint-plugin";
-import tsParser from "@typescript-eslint/parser";
+import pluginJs from "@eslint/js";
+import pluginReactHooks from "eslint-plugin-react-hooks";
+import pluginReactRefresh from "eslint-plugin-react-refresh";
+import tseslint from "typescript-eslint";
 
-export default [
-  {
-    ignores: [
-      "node_modules",
-      "build",
-      "dist",
-      ".react-router",
-      "**/.react-router/**",
-    ],
-  },
-
-  js.configs.recommended,
-
-  {
-    files: ["**/*.{js,jsx,ts,tsx}"],
-    languageOptions: {
-      parser: tsParser,
-      ecmaVersion: 2020,
-      sourceType: "module",
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-        ...globals.jest,
-        ...globals.es2021,
-      },
-    },
-    plugins: {
-      react: reactPlugin,
-      "@typescript-eslint": tseslint,
-    },
-    rules: {
-      "no-unused-vars": "off",
-      "react/prop-types": "off",
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        {
-          varsIgnorePattern: "^_",
-          argsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_",
+export default tseslint.config(
+    pluginJs.configs.recommended,
+    ...tseslint.configs.recommended,
+    {
+        files: ["**/*.{ts,tsx}"],
+        languageOptions: {
+            ecmaVersion: "latest",
+            globals: { ...globals.browser, ...globals.node },
+            parserOptions: {
+                ecmaVersion: "latest",
+                sourceType: "module",
+            },
         },
-      ],
+        settings: {
+            react: {
+                version: "19",
+            },
+        },
     },
-    settings: {
-      react: {
-        version: "detect",
-      },
+    {
+        files: ["**/*.{ts,tsx}"],
+        plugins: {
+            "react-hooks": pluginReactHooks,
+            "react-refresh": pluginReactRefresh,
+        },
+        rules: {
+            "react-refresh/only-export-components": [
+                "warn",
+                { allowConstantExport: true },
+            ],
+        },
     },
-  },
-];
+);

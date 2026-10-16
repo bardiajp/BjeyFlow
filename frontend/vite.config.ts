@@ -1,8 +1,20 @@
-import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
 
+// https://vite.dev/config/
 export default defineConfig({
-  plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
+    plugins: [react(), tailwindcss()],
+    server: {
+        host: "0.0.0.0",
+    },
+    resolve: {
+        alias: [
+            {
+                find: "@",
+                replacement: fileURLToPath(new URL("./src", import.meta.url)),
+            },
+        ],
+    },
 });

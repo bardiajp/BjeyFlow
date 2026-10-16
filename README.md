@@ -1,195 +1,62 @@
-<a id="readme-top"></a>
+# BjeyFlow
 
-<br />
-<div align="center">
-    <h3 align="center">Django + React Starter Kit</h3>
-    <p align="center">
-        🚀 Production-ready boilerplate for building modern web applications with <b>Django</b> (backend) and <b>React</b> (frontend).
-    </p>
-    <p align="center">
-        This project includes authentication, API setup, and Docker-based development environment — perfect for kickstarting new projects or learning fullstack development.
-    </p>
-</div>
+**Django + Django REST Framework** backend and **React 19 + Vite** frontend.
 
+## Stack
 
-<details>
-    <summary>Table of Contents</summary>
-        <ol>
-            <li><a href="#ci">CI</a></li>
-            <li><a href="#tech-stack">Tech Stack</a></li>
-            <li><a href="#features">Features</a></li>
-            <li><a href="#project-structure">Environment Variables</a></li>
-            <li><a href="#project-structure">Project Structure</a></li>
-            <li><a href="#getting-started">Getting Started</a></li>
-            <li><a href="#development-build">Development Build</a></li>
-            <li><a href="#credentials">Credentials</a></li>
-            <li><a href="#screenshots">Screenshots</a></li>
-            <li><a href="#roadmap">Roadmap</a></li>
-        </ol>
-</details>
+- Python 3.11+, Django 5.2, DRF, simplejwt (JWT auth with httponly cookies)
+- React 19, Vite, TypeScript, Tailwind CSS 4, shadcn UI
+- PostgreSQL
+- Docker Compose
 
+## Repository layout
 
-## CI
+```
+backend/
+  config/    Django settings, URLs, WSGI/ASGI
+  core/      Core app for tasks and other entities (ready for viewsets)
+  users/     User model, JWT auth views (login / logout / me)
+  utils/     Shared utilities
+  requirements/  base.txt, dev.txt
 
-[![Backend CI](https://github.com/allutk/django-react-starter-kit/actions/workflows/backend.yml/badge.svg)](https://github.com/allutk/django-react-starter-kit/actions/workflows/backend.yml)<br />
-[![Frontend CI](https://github.com/allutk/django-react-starter-kit/actions/workflows/frontend.yml/badge.svg)](https://github.com/allutk/django-react-starter-kit/actions/workflows/frontend.yml)
+frontend/
+  src/
+    app.tsx        React router entry
+    routes/        Route definitions (login page)
+    components/    Reusable UI components
+    components/ui/ shadcn primitives (button, input, card, label)
+    lib/           axios instance, cn() helper
+    layouts/
+    index.css
+  package.json
+  vite.config.ts
+  tsconfig.json
+```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+## Endpoints
 
+| URL | Description |
+|-----|-------------|
+| `POST /users/auth/login/` | JWT login (sets httponly cookie) |
+| `POST /users/auth/logout/` | JWT logout (clears cookie) |
+| `GET /users/auth/me/` | Current user |
 
-## Tech Stack
+## Getting started
 
-[![Python][Python.org]][Python-url]<br />
-[![Django][Django]][Django-url]<br />
-[![DRF][DRF]][DRF-url]<br />
-[![React][React]][React-url]<br />
-[![React-Router][React-Router]][React-Router-url]<br />
-[![Postgres][Postgres]][Postgres-url]<br />
-[![Docker][Docker]][Docker-url]
+1. Copy `.env.example` to `.env` and fill in the values.
+2. Install backend dependencies: `pip install -r backend/requirements/base.txt`
+3. Install frontend dependencies: `cd frontend && npm install`
+4. Run migrations: `python backend/manage.py migrate`
+5. Create a superuser: `python backend/manage.py createsuperuser`
+6. Start the backend: `python backend/manage.py runserver 0.0.0.0:8000`
+7. Start the frontend: `cd frontend && npm run dev`
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+Docker:
 
-
-## Features
-- **Backend:** Django + Django REST Framework (API)
-- **Frontend:** React + React Router
-- **Auth:** JWT authentication (register/login/logout)
-- **Database:** PostgreSQL
-- **Containerization:** Docker + Docker Compose
-- **CI/CD:** GitHub Actions (linting & tests)
-- **Extras:** Pre-configured ESLint, Black, and Prettier
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-## Environment Variables
-
-The mandatory environment variables are:
-- **HOST** _(string)_ - host FQDN
-- **BACKEND_PORT** _(number)_ - backend port
-- **FRONTEND_PORT** _(number)_ - frontend port
-- **POSTGRES_DB** _(string)_ - PostgreSQL DB name
-- **POSTGRES_USER** _(string)_ - PostgreSQL user
-- **POSTGRES_PASSWORD** _(string)_ - PostgreSQL password
-- **POSTGRES_HOST** _(string)_ - PostgreSQL Docker host
-- **POSTGRES_PORT** _(number)_ - PostgreSQL port
-<br />
-
-Example `.env` file with all the variables:
 ```bash
-HOST=localhost
-BACKEND_PORT=8000
-FRONTEND_PORT=3000
-POSTGRES_DB=default_database
-POSTGRES_USER=root_user
-POSTGRES_PASSWORD=password
-POSTGRES_HOST=db
-POSTGRES_PORT=5432
+docker compose up --build
 ```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+## Git
 
-
-## Project Structure
-```
-django-react-starter-kit/
-├── backend/ # Django + DRF project
-├── frontend/ # React app with Router
-├── docker/ # Dockerfiles and configs
-├── docker-compose.yml
-├── .github/
-└── .dockerignore
-└── .gitignore
-└── README.md
-```
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-## Getting Started
-
-1. Clone the repo:
-    ```bash
-    git clone https://github.com/allutk/django-react-starter-kit.git
-    cd django-react-starter-kit
-    ```
-
-2. Start services with Docker:
-    ```bash
-    docker compose up --force-recreate --build -d
-    ```
-
-3. _*(Optional, first use only)*_ make migrations and migrate:
-    ```bash
-    docker compose exec backend python manage.py makemigrations
-    docker compose exec backend python manage.py migrate
-    ```
-
-3. Open apps:
-    - Backend API → http://localhost:8000/api/
-    - Frontend → http://localhost:3000/
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-## Development Build
-
-1. Start the backend:
-    ```bash
-    python backend/manage.py runserver 0.0.0.0:8000
-    ```
-
-2. Start the frontend:
-    ```bash
-    npm run --prefix frontend/ dev
-    ```
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-## Credentials
-
-- User: `demo@example.com`
-- Password: `demo123`
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-## Screenshots
-
-![Register page](https://github.com/allutk/django-react-starter-kit/raw/main/frontend/assets/Register.png "Register page")
-![Login page](https://github.com/allutk/django-react-starter-kit/raw/main/frontend/assets/Login.png "Login page")
-![Profile page](https://github.com/allutk/django-react-starter-kit/raw/main/frontend/assets/Profile.png "Profile page")
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-## Roadmap
-
-- [x] Initial repo configuration, 2025.10.04
-- [x] Connect frontend to backend, 2025.10.04
-- [x] Backend auth functionality, 2025.10.04
-- [x] Frontend auth functionality, 2025.10.05
-- [x] Frontend user details update functionality, 2025.10.07
-- [x] Docker setup, 2025.10.09
-- [x] GitHub Actions and linters, 2025.10.09
-- [x] Backend test cases, 2025.10.10
-- [x] Frontend test cases, 2025.10.12
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-[Python.org]: https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54
-[Python-url]: https://www.python.org
-[Django]: https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green
-[Django-url]: https://www.djangoproject.com
-[DRF]: https://img.shields.io/badge/django%20rest%20framework-092E20?style=for-the-badge&logo=django&logoColor=green
-[DRF-url]: https://www.django-rest-framework.org
-[React]: https://img.shields.io/badge/react-black?style=for-the-badge&logo=react
-[React-url]: https://react.dev
-[React-Router]: https://img.shields.io/badge/react%20router-black?style=for-the-badge&logo=react
-[React-Router-url]: https://reactrouter.com
-[Postgres]: https://img.shields.io/badge/postgresql-316192?style=for-the-badge&logo=postgresql&logoColor=white
-[Postgres-url]: https://www.postgresql.org
-[Docker]: https://img.shields.io/badge/docker-257bd6?style=for-the-badge&logo=docker&logoColor=white
-[Docker-url]: https://www.docker.com
+Remote: `git@github.com:bardiajp/bjeyflow.git`

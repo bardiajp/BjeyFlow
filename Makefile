@@ -10,7 +10,7 @@ help: ## Show this help message
 install: install-backend install-frontend ## Install all dependencies
 
 install-backend: ## Install backend Python dependencies
-	cd backend && pip install -r requirements.txt
+	cd backend && pip install -r requirements/base.txt
 
 install-frontend: ## Install frontend Node dependencies
 	cd frontend && npm install

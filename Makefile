@@ -1,4 +1,9 @@
-.PHONY: help install install-backend install-frontend dev dev-backend dev-frontend build test test-backend test-frontend lint lint-backend lint-frontend format docker-up docker-down docker-build logs clean migrate superuser createsuperuser
+.PHONY: help up down venv install install-backend install-frontend dev dev-backend dev-frontend build build-frontend check test test-backend test-frontend lint lint-frontend format docker-up docker-down docker-build db-up logs clean migrate makemigrations superuser shell
+
+PYTHON ?= $(CURDIR)/.venv/bin/python
+PYTHON_BOOTSTRAP ?= python3
+BACKEND_PORT ?= 8100
+FRONTEND_PORT ?= 5174
 
 # Default target
 help: ## Show this help message
@@ -9,11 +14,14 @@ help: ## Show this help message
 
 install: install-backend install-frontend ## Install all dependencies
 
-install-backend: ## Install backend Python dependencies
-	cd backend && pip install -r requirements/base.txt
+venv: ## Create an isolated project interpreter if missing
+	test -x "$(PYTHON)" || $(PYTHON_BOOTSTRAP) -m venv .venv
+
+install-backend: venv ## Install backend development dependencies
+	"$(PYTHON)" -m pip install -r backend/requirements/dev.txt
 
 install-frontend: ## Install frontend Node dependencies
-	cd frontend && npm install
+	cd frontend && npm ci
 
 # ─── Development ─────────────────────────────────────────────────────
 
@@ -23,15 +31,16 @@ dev: ## Run both backend and frontend dev servers (requires terminals)
 	@echo "Backend: http://localhost:$(BACKEND_PORT) | Frontend: http://localhost:$(FRONTEND_PORT)"
 
 dev-backend: ## Run Django dev server
-	cd backend && python manage.py runserver
+	"$(PYTHON)" backend/manage.py runserver 127.0.0.1:$(BACKEND_PORT)
 
 dev-frontend: ## Run Vite/React dev server
-	cd frontend && npm run dev
+	cd frontend && npm run dev -- --port $(FRONTEND_PORT)
 
 # ─── Build ────────────────────────────────────────────────────────────
 
-build: build-frontend ## Build production assets
-	@echo "Build complete"
+build: ## Build Docker images initially or after dependency/Dockerfile changes
+	@test -f .env || cp .env.example .env
+	docker compose build
 
 build-frontend: ## Build frontend for production
 	cd frontend && npm run build
@@ -40,49 +49,62 @@ build-frontend: ## Build frontend for production
 
 test: test-backend test-frontend ## Run all tests
 
-test-backend: ## Run backend tests with pytest
-	cd backend && pytest
+check: ## Check Django configuration, migration drift, and frontend types
+	"$(PYTHON)" backend/manage.py check
+	"$(PYTHON)" backend/manage.py makemigrations --check --dry-run
+	cd frontend && npm run typecheck
 
-test-frontend: ## Run frontend tests with jest
-	cd frontend && npm test
+test-backend: ## Run backend tests with pytest
+	cd backend && "$(PYTHON)" -m pytest
+
+test-frontend: ## Typecheck frontend (no unit test runner configured yet)
+	cd frontend && npm run typecheck
 
 # ─── Linting & Formatting ────────────────────────────────────────────
 
-lint: lint-backend lint-frontend ## Lint all code
-
-lint-backend: ## Lint backend with flake8
-	cd backend && flake8 .
+lint: lint-frontend ## Lint frontend code
 
 lint-frontend: ## Lint frontend with eslint
 	cd frontend && npm run lint
 
 format: ## Format backend code with black
-	cd backend && black .
+	cd backend && "$(PYTHON)" -m black .
 
 # ─── Django ──────────────────────────────────────────────────────────
 
 migrate: ## Run Django migrations
-	cd backend && python3 manage.py migrate
+	"$(PYTHON)" backend/manage.py migrate
 
 makemigrations: ## Create new Django migrations
-	cd backend && python3 manage.py makemigrations
+	"$(PYTHON)" backend/manage.py makemigrations
 
 superuser: ## Create Django superuser
-	cd backend && python3 manage.py createsuperuser
+	"$(PYTHON)" backend/manage.py createsuperuser
 
-shell: ## Open Django shell_plus
-	cd backend && python3 manage.py shell_plus
+shell: ## Open Django shell
+	"$(PYTHON)" backend/manage.py shell
 
 # ─── Docker ──────────────────────────────────────────────────────────
 
-docker-up: ## Start all Docker containers
-	docker compose up -d --build
+up: ## Start built images and run database migrations (no build)
+	@test -f .env || cp .env.example .env
+	docker compose create --no-build backend frontend
+	docker compose up -d --wait db
+	docker compose run --rm --no-deps backend python manage.py migrate --noinput
+	docker compose up -d --no-build --renew-anon-volumes
+	docker compose ps
+
+down: docker-down ## Stop the full stack (keeps database data)
+
+docker-up: up ## Alias for make up
+
+db-up: ## Start PostgreSQL for local development
+	docker compose up -d --wait db
 
 docker-down: ## Stop all Docker containers
 	docker compose down
 
-docker-build: ## Build Docker images
-	docker compose build
+docker-build: build ## Alias for make build
 
 logs: ## Follow Docker logs
 	docker compose logs -f
@@ -90,7 +112,7 @@ logs: ## Follow Docker logs
 # ─── Cleanup ─────────────────────────────────────────────────────────
 
 clean: ## Remove build artifacts and cache files
-	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name "*.pyc" -delete 2>/dev/null || true
-	rm -rf frontend/build frontend/.react-router backend/.pytest_cache 2>/dev/null || true
+	find backend -type d -name "__pycache__" -prune -exec rm -rf {} +
+	rm -rf frontend/dist backend/.pytest_cache
+	find frontend -maxdepth 1 -type f -name '*.tsbuildinfo' -delete
 	@echo "Cleanup complete"

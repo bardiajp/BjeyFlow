@@ -12,3 +12,9 @@ exclude = '''
   )/
 )
 '''
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+pythonpath = ["."]
+testpaths = ["users/tests"]
+python_files = ["test_*.py"]

@@ -9,6 +9,9 @@ from users.models import User
 
 
 class JWTCookieAuthentication(BaseAuthentication):
+    def authenticate_header(self, request):
+        return "Bearer"
+
     def authenticate(self, request):
         token = request.COOKIES.get(settings.JWT_COOKIE_NAME)
         if not token:

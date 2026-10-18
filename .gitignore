@@ -1,98 +1,54 @@
-# Byte-compiled / optimized / DLL files
+# Python environments, bytecode, and caches
+.venv/
+venv/
+env/
 __pycache__/
 *.py[cod]
-*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
 
-# Distribution / packaging
-.Python
+# Build and package output
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+.eggs/
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
+# Tests and coverage
+.coverage
+.coverage.*
+coverage/
+coverage.xml
 htmlcov/
 .tox/
 .nox/
-.coverage
-.coverage.*
-.pytest_cache/
-.ruff_cache/
-.mypy_cache/
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
 .hypothesis/
-.pytest_cache/
-cover/
 
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
+# Local secrets, Django output, and database data
+.env
+.env.*
+!.env.example
+.envs/
 *.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
 staticfiles/
-.envs/
+pgdata/
 
-# Environments
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Visual Studio Code
-.vscode/* 
-
-# JetBrains
-.idea/
-!.vscode/settings.json 
-!.vscode/tasks.json 
-!.vscode/launch.json 
-!.vscode/extensions.json 
-.history
-
-# dependencies
+# Frontend dependencies and generated files
 node_modules/
+*.tsbuildinfo
 .react-router/
 .pnp/
 .pnp.js
-
-# misc
-.DS_Store
-
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-pgdata
+# Editor and operating-system files
+.idea/
+.vscode/
+.history/
+.DS_Store

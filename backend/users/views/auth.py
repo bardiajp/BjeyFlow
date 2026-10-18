@@ -8,7 +8,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from users.serializers.auth import LoginSerializer
+from users.auth import change_password
+from users.serializers.auth import ChangePasswordSerializer, LoginSerializer
 
 
 class LoginView(TokenObtainPairView):
@@ -28,6 +29,7 @@ class LoginView(TokenObtainPairView):
                     "id": str(user.id),
                     "username": user.username,
                     "display_name": user.display_name,
+                    "role": user.role,
                 },
             },
             status=status.HTTP_200_OK,
@@ -53,6 +55,18 @@ class LogoutView(APIView):
         return response
 
 
+class ChangePasswordView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data, context={"user": request.user}
+        )
+        serializer.is_valid(raise_exception=True)
+        change_password(request.user, serializer.validated_data["new_password"])
+        return Response({"detail": "Password changed successfully."})
+
+
 class MeView(APIView):
     permission_classes = (IsAuthenticated,)
 
@@ -63,6 +77,7 @@ class MeView(APIView):
                     "id": str(request.user.id),
                     "username": request.user.username,
                     "display_name": request.user.display_name,
+                    "role": request.user.role,
                 },
             }
         )

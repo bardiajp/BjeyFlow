@@ -8,6 +8,11 @@ export default defineConfig({
     plugins: [react(), tailwindcss()],
     server: {
         host: "0.0.0.0",
+        port: 5174,
+        strictPort: true,
+        watch: {
+            usePolling: process.env.VITE_USE_POLLING === "true",
+        },
     },
     resolve: {
         alias: [

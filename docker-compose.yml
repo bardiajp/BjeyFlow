@@ -48,6 +48,7 @@ services:
       VITE_HOST: ${HOST:-localhost}
       VITE_BACKEND_PORT: ${BACKEND_PORT:-8100}
       VITE_USE_POLLING: "true"
+      VITE_HMR_CLIENT_PORT: ${FRONTEND_PORT:-5174}
     volumes:
       - ./frontend:/app
       - /app/node_modules

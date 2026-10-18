@@ -75,6 +75,36 @@ def test_create_retrieve_update_and_delete_user(client):
     assert not User.objects.filter(pk=user.pk).exists()
 
 
+@pytest.mark.parametrize("role,expected", [(None, 401), ("user", 403), ("staff", 403)])
+def test_create_user_is_not_public_and_cannot_be_used_to_escalate_role(role, expected):
+    api = APIClient()
+    if role:
+        actor = User.objects.create_user("actor", "initial-password")
+        actor.set_role(role)
+        actor.save()
+        api.force_authenticate(actor)
+    response = api.post(
+        reverse("users-list"),
+        {
+            "username": "unauthorized-admin",
+            "password": "secure-password",
+            "role": "superuser",
+        },
+        format="json",
+    )
+    assert response.status_code == expected
+    assert not User.objects.filter(username="unauthorized-admin").exists()
+
+
+def test_create_user_rejects_duplicate_username(client):
+    body = {"username": "same-name", "password": "secure-password", "role": "user"}
+    assert client.post(reverse("users-list"), body, format="json").status_code == 201
+    response = client.post(reverse("users-list"), body, format="json")
+    assert response.status_code == 400
+    assert "username" in response.data
+    assert User.objects.filter(username="same-name").count() == 1
+
+
 @pytest.mark.parametrize(
     "body",
     [

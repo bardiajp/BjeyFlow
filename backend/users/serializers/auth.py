@@ -6,6 +6,11 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class LoginSerializer(TokenObtainPairSerializer):
     default_error_messages = {"no_active_account": _("Wrong username or password")}
+    remember_me = serializers.BooleanField(default=True, write_only=True)
+
+    def validate(self, attrs):
+        self.remember_me = attrs.pop("remember_me", True)
+        return super().validate(attrs)
 
 
 class ChangePasswordSerializer(serializers.Serializer):

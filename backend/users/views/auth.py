@@ -40,7 +40,11 @@ class LoginView(TokenObtainPairView):
             httponly=True,
             secure=settings.JWT_COOKIE_SECURE,
             samesite="Lax",
-            max_age=settings.JWT_ACCESS_TOKEN_LIFETIME_SECONDS,
+            max_age=(
+                settings.JWT_ACCESS_TOKEN_LIFETIME_SECONDS
+                if serializer.remember_me
+                else None
+            ),
             path="/",
         )
         return response

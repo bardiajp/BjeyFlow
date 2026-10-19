@@ -1,4 +1,4 @@
-.PHONY: help up down venv install install-backend install-frontend dev dev-backend dev-frontend build build-frontend check test test-backend test-frontend lint lint-frontend format docker-up docker-down docker-build db-up logs clean migrate makemigrations superuser shell
+.PHONY: help up down venv install install-backend install-frontend dev dev-backend dev-frontend build build-frontend check lint lint-frontend format docker-up docker-down docker-build db-up logs clean migrate seed seed-local makemigrations superuser shell
 
 PYTHON ?= $(CURDIR)/.venv/bin/python
 PYTHON_BOOTSTRAP ?= python3
@@ -45,19 +45,11 @@ build: ## Build Docker images initially or after dependency/Dockerfile changes
 build-frontend: ## Build frontend for production
 	cd frontend && npm run build
 
-# ─── Testing ─────────────────────────────────────────────────────────
-
-test: test-backend test-frontend ## Run all tests
+# ─── Validation ──────────────────────────────────────────────────────
 
 check: ## Check Django configuration, migration drift, and frontend types
 	"$(PYTHON)" backend/manage.py check
 	"$(PYTHON)" backend/manage.py makemigrations --check --dry-run
-	cd frontend && npm run typecheck
-
-test-backend: ## Run backend tests with pytest
-	cd backend && "$(PYTHON)" -m pytest
-
-test-frontend: ## Typecheck frontend (no unit test runner configured yet)
 	cd frontend && npm run typecheck
 
 # ─── Linting & Formatting ────────────────────────────────────────────
@@ -74,6 +66,16 @@ format: ## Format backend code with black
 
 migrate: ## Run Django migrations
 	"$(PYTHON)" backend/manage.py migrate
+
+seed: ## Migrate and seed development data using the built backend image
+	@test -f .env || cp .env.example .env
+	docker compose create --no-build backend
+	docker compose up -d --wait db
+	docker compose run --rm --no-deps backend python manage.py migrate --noinput
+	docker compose run --rm --no-deps backend python manage.py seed
+
+seed-local: migrate ## Seed development data using the local project interpreter
+	"$(PYTHON)" backend/manage.py seed
 
 makemigrations: ## Create new Django migrations
 	"$(PYTHON)" backend/manage.py makemigrations

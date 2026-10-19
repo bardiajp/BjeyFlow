@@ -6,6 +6,20 @@ from .base import BaseModel
 
 
 class Project(BaseModel):
+    class Icon(models.TextChoices):
+        HASH = "hash", "Hash"
+        FOLDER = "folder", "Folder"
+        BRIEFCASE = "briefcase", "Briefcase"
+        CODE = "code", "Code"
+        BOOK = "book", "Book"
+        HEART = "heart", "Heart"
+        STAR = "star", "Star"
+        TARGET = "target", "Target"
+        PALETTE = "palette", "Palette"
+        COFFEE = "coffee", "Coffee"
+        MUSIC = "music", "Music"
+        ROCKET = "rocket", "Rocket"
+
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -13,6 +27,7 @@ class Project(BaseModel):
     )
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True)
+    icon = models.CharField(max_length=20, choices=Icon.choices, default=Icon.HASH)
     color = models.CharField(
         max_length=7,
         default="#8ECAE6",

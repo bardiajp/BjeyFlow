@@ -3,10 +3,14 @@ from functools import cached_property
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from core.models import Task
 from core.permissions import IsProjectOwner
 from core.serializers.subtask import SubTaskSerializer
+from core.serializers.reorder import SubTaskReorderSerializer
+from core.services.reorder import reorder_subtasks
 
 
 class SubTaskViewSet(ModelViewSet):
@@ -32,3 +36,16 @@ class SubTaskViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(task=self.parent_task)
+
+    @action(detail=False, methods=["post"], serializer_class=SubTaskReorderSerializer)
+    def reorder(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reorder_subtasks(
+            request.user, self.parent_task.pk, serializer.validated_data["ids"]
+        )
+        return Response(
+            SubTaskSerializer(
+                self.get_queryset(), many=True, context=self.get_serializer_context()
+            ).data
+        )

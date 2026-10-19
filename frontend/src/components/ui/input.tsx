@@ -12,7 +12,7 @@ function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
             type={isPassword && showPassword ? 'text' : type}
             data-slot="input"
             className={cn(
-                'border-input hover:border-primary placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary h-8 w-full rounded-lg border bg-transparent px-4 py-1 text-xs font-medium transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-50',
+                'hover:border-primary border placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary h-8 w-full rounded-lg bg-transparent px-4 py-1 text-xs font-medium transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-50',
                 className,
                 isPassword && 'pr-10'
             )}

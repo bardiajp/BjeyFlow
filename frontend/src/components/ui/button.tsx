@@ -9,13 +9,12 @@ const buttonVariants = cva(
     {
         variants: {
             variant: {
-                default: 'bg-primary text-primary-foreground hover:bg-primary/90',
-                outline:
-                    'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
-                ghost: 'hover:bg-accent hover:text-accent-foreground',
-                cancel: 'border border-input bg-background text-muted-foreground hover:bg-accent',
+                default: 'bg-primary hover:bg-primary/90',
+                outline: 'border border-input bg-background hover:bg-accent',
+                ghost: 'hover:bg-accent',
+                cancel: 'border border-input bg-background hover:bg-accent',
                 destructive:
-                    'border-destructive bg-white text-destructive hover:bg-destructive hover:text-white',
+                    'border-secondary bg-secondary/10 hover:bg-secondary/20 [&_svg]:text-secondary',
             },
             size: {
                 default: 'h-9 px-4',
@@ -47,7 +46,7 @@ function Button({
     return (
         <ButtonPrimitive
             data-slot="button"
-            className={cn(buttonVariants({ variant, size, className }))}
+            className={cn(buttonVariants({ variant, size, className }), 'text-button-foreground')}
             disabled={disabled || isPending}
             aria-busy={isPending || undefined}
             {...props}

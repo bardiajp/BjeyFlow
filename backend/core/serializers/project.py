@@ -15,6 +15,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "owner",
             "name",
             "description",
+            "icon",
             "color",
             "position",
             "is_archived",

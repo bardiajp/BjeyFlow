@@ -1,7 +1,7 @@
 import { useId, type ComponentProps, type ReactNode } from 'react';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { FieldFrame } from './field-frame';
 
 export type LabeledInputProps = ComponentProps<typeof Input> & {
     label: ReactNode;
@@ -9,6 +9,7 @@ export type LabeledInputProps = ComponentProps<typeof Input> & {
     error?: string;
     isInvalid?: boolean;
     containerClassName?: string;
+    variant?: 'input' | 'date' | 'time';
 };
 
 export function LabeledInput({
@@ -19,12 +20,16 @@ export function LabeledInput({
     containerClassName,
     id,
     required,
+    type,
+    variant = 'input',
+    className,
     'aria-describedby': ariaDescribedBy,
     'aria-invalid': ariaInvalid,
     ...props
 }: LabeledInputProps) {
     const generatedId = useId();
     const inputId = id ?? generatedId;
+    const inputType = variant === 'date' || variant === 'time' ? variant : type;
     const descriptionId = `${inputId}-description`;
     const errorId = `${inputId}-error`;
     const describedBy =
@@ -33,37 +38,28 @@ export function LabeledInput({
             .join(' ') || undefined;
 
     return (
-        <div data-slot="labeled-input" className={cn('grid gap-2', containerClassName)}>
-            <Label htmlFor={inputId}>
-                {label}
-                {required && (
-                    <span aria-hidden="true" className="text-destructive ml-1">
-                        *
-                    </span>
-                )}
-            </Label>
+        <FieldFrame
+            id={inputId}
+            label={label}
+            required={required}
+            description={description}
+            error={error}
+            containerClassName={containerClassName}
+            variant={inputType === 'date' ? 'date' : inputType === 'time' ? 'time' : 'input'}
+        >
             <Input
                 {...props}
                 id={inputId}
+                type={inputType}
+                className={cn(
+                    'h-10 w-full px-4 text-base font-medium shadow-none',
+                    className,
+                    'min-h-10 rounded-[10px] border-0 bg-transparent py-2 outline-none focus-visible:ring-0'
+                )}
                 required={required}
                 aria-invalid={error ? true : (isInvalid ?? ariaInvalid)}
                 aria-describedby={describedBy}
             />
-            {description && (
-                <p id={descriptionId} className="text-muted-foreground text-xs">
-                    {description}
-                </p>
-            )}
-            {error && (
-                <p
-                    id={errorId}
-                    data-slot="field-error"
-                    role="alert"
-                    className="text-destructive text-xs"
-                >
-                    {error}
-                </p>
-            )}
-        </div>
+        </FieldFrame>
     );
 }

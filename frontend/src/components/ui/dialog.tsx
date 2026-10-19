@@ -7,7 +7,12 @@ import { cn } from '@/lib/utils';
 export function Dialog(props: DialogPrimitive.Root.Props) {
     return <DialogPrimitive.Root {...props} />;
 }
-export function DialogContent({ className, children, ...props }: DialogPrimitive.Popup.Props) {
+export function DialogContent({
+    className,
+    children,
+    onKeyDown,
+    ...props
+}: DialogPrimitive.Popup.Props) {
     return (
         <DialogPrimitive.Portal>
             <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/20 backdrop-blur-xs" />
@@ -18,6 +23,17 @@ export function DialogContent({ className, children, ...props }: DialogPrimitive
                     className
                 )}
                 {...props}
+                onKeyDown={(event) => {
+                    onKeyDown?.(event);
+                    // Base UI normally stops arrow-key bubbling. Drag handles need
+                    // those events to reach dnd-kit's document-level keyboard sensor.
+                    if (
+                        (event.target as HTMLElement).closest('[data-sortable-handle]') &&
+                        event.key.startsWith('Arrow')
+                    ) {
+                        event.preventBaseUIHandler();
+                    }
+                }}
             >
                 {children}
                 <DialogPrimitive.Close

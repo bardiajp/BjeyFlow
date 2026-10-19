@@ -10,6 +10,7 @@ class TaskSerializer(serializers.ModelSerializer):
         queryset=Project.objects.none(), pk_field=serializers.UUIDField()
     )
     project_name = serializers.CharField(source="project.name", read_only=True)
+    project_icon = serializers.CharField(source="project.icon", read_only=True)
     subtasks = SubTaskSerializer(many=True, read_only=True)
     subtasks_count = serializers.SerializerMethodField()
     completed_subtasks_count = serializers.SerializerMethodField()
@@ -20,6 +21,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "id",
             "project",
             "project_name",
+            "project_icon",
             "title",
             "description",
             "status",

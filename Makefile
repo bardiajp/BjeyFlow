@@ -4,6 +4,12 @@ PYTHON ?= $(CURDIR)/.venv/bin/python
 PYTHON_BOOTSTRAP ?= python3
 BACKEND_PORT ?= 8100
 FRONTEND_PORT ?= 5174
+SEED_PROJECTS ?= 12
+SEED_TASKS ?= 120
+SEED_SUBTASKS ?= 5
+SEED_USERNAME ?=
+SEED_ARGS ?=
+SEED_OPTIONS = --projects "$(SEED_PROJECTS)" --tasks "$(SEED_TASKS)" --subtasks "$(SEED_SUBTASKS)" $(if $(SEED_USERNAME),--username "$(SEED_USERNAME)") $(SEED_ARGS)
 
 # Default target
 help: ## Show this help message
@@ -72,10 +78,10 @@ seed: ## Migrate and seed development data using the built backend image
 	docker compose create --no-build backend
 	docker compose up -d --wait db
 	docker compose run --rm --no-deps backend python manage.py migrate --noinput
-	docker compose run --rm --no-deps backend python manage.py seed
+	docker compose run --rm --no-deps backend python manage.py seed $(SEED_OPTIONS)
 
 seed-local: migrate ## Seed development data using the local project interpreter
-	"$(PYTHON)" backend/manage.py seed
+	"$(PYTHON)" backend/manage.py seed $(SEED_OPTIONS)
 
 makemigrations: ## Create new Django migrations
 	"$(PYTHON)" backend/manage.py makemigrations

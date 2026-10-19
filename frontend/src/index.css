@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter";
+@import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -17,12 +18,13 @@
 
     --color-primary: #8ECAE6;
     --color-primary-foreground: #023047;
+    --color-button-foreground: #023047;
 
     --color-secondary: #FB8500;
     --color-secondary-foreground: #0f172a;
 
-    --color-muted: #f1f5f9;
-    --color-muted-foreground: #64748b;
+    --color-muted-foreground: #696969;
+    --color-neutral-500: #696969;
 
     --color-accent: #f1f5f9;
     --color-accent-foreground: #0f172a;

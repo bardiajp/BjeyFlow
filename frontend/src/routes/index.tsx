@@ -1,8 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router';
+import TasksPage from '@/app/tasks/page';
+import SettingsPage from '@/app/settings/page';
 import Login from '@/app/users/login';
 import UsersPage from '@/app/users/page';
 import Loading from '@/components/loading';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Layout from '@/layouts';
 import useUserStore from '@/store/use-user-store';
 
@@ -12,32 +13,32 @@ export default function AppRoutes() {
     return (
         <Routes>
             {user ? (
-                <Route element={<Layout />}>
+                <Route path="" element={<Layout />}>
+                    <Route index element={<Navigate to="/today" replace />} />
+                    <Route path="inbox" element={<TasksPage key="inbox" view="inbox" />} />
+                    <Route path="today" element={<TasksPage key="today" view="today" />} />
+                    <Route path="upcoming" element={<TasksPage key="upcoming" view="upcoming" />} />
                     <Route
-                        index
-                        element={
-                            user.role === 'superuser' ? (
-                                <Navigate to="/settings/users" replace />
-                            ) : (
-                                <Card className="w-full">
-                                    <CardHeader>
-                                        <CardTitle>Welcome to BjeyFlow</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        You are signed in. User management is available to system
-                                        administrators.
-                                    </CardContent>
-                                </Card>
-                            )
-                        }
+                        path="completed"
+                        element={<TasksPage key="completed" view="completed" />}
                     />
-                    <Route
-                        path="settings/users"
-                        element={
-                            user.role === 'superuser' ? <UsersPage /> : <Navigate to="/" replace />
-                        }
-                    />
-                    <Route path="*" element={<Navigate to="/" replace />} />
+                    <Route path="projects">
+                        <Route path=":projectId" element={<TasksPage view="project" />} />
+                    </Route>
+                    <Route path="settings">
+                        <Route index element={<SettingsPage />} />
+                        <Route
+                            path="users"
+                            element={
+                                user.role === 'superuser' ? (
+                                    <UsersPage />
+                                ) : (
+                                    <Navigate to="/settings" replace />
+                                )
+                            }
+                        />
+                    </Route>
+                    <Route path="*" element={<Navigate to="/today" replace />} />
                 </Route>
             ) : (
                 <>

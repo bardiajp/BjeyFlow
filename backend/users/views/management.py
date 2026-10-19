@@ -1,3 +1,4 @@
+from django.db.models.deletion import ProtectedError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -25,7 +26,14 @@ class UserManagementViewSet(viewsets.ModelViewSet):
         ):
             msg = "At least one active system administrator must remain."
             raise ValidationError({"detail": msg})
-        instance.delete()
+        try:
+            instance.delete()
+        except ProtectedError as error:
+            raise ValidationError(
+                {
+                    "detail": "This account owns projects containing tasks. Remove its tasks before deleting the account."
+                }
+            ) from error
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

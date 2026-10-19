@@ -5,11 +5,9 @@
         "moduleResolution": "bundler",
         "lib": ["DOM", "DOM.Iterable", "ESNext"],
         "jsx": "react-jsx",
-        "baseUrl": ".",
         "paths": {
             "@/*": ["./src/*"]
         },
-        "ignoreDeprecations": "6.0",
         "strict": true,
         "noEmit": true,
         "esModuleInterop": true,

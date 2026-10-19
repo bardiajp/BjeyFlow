@@ -10,6 +10,9 @@ export default defineConfig({
         host: "0.0.0.0",
         port: 5174,
         strictPort: true,
+        hmr: process.env.VITE_HMR_CLIENT_PORT
+            ? { clientPort: Number(process.env.VITE_HMR_CLIENT_PORT) }
+            : undefined,
         watch: {
             usePolling: process.env.VITE_USE_POLLING === "true",
         },

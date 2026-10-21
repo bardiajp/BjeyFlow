@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from ipaddress import ip_address
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 env = environ.Env(
     DEBUG=(bool, False),
@@ -145,6 +147,22 @@ AUTH_USER_MODEL = "users.User"
 
 JWT_SECRET_KEY = env("JWT_SECRET_KEY", default=SECRET_KEY)
 JWT_ACCESS_TOKEN_LIFETIME_SECONDS = env("JWT_ACCESS_TOKEN_LIFETIME_SECONDS")
+WEATHER_TRUSTED_PROXIES = env.list("WEATHER_TRUSTED_PROXIES", default=[])
+WEATHER_DEV_IP = env("WEATHER_DEV_IP", default="").strip() if DEBUG else ""
+if WEATHER_DEV_IP:
+    try:
+        address = ip_address(WEATHER_DEV_IP)
+        address = getattr(address, "ipv4_mapped", None) or address
+        if not address.is_global:
+            raise ValueError("A public IP is required")
+        WEATHER_DEV_IP = str(address)
+    except ValueError as exc:
+        raise ImproperlyConfigured(
+            "WEATHER_DEV_IP must be a valid public IP address."
+        ) from exc
+WEATHER_CACHE_SECONDS = 600
+WEATHER_REQUEST_TIMEOUT = 4
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {"weather": "30/min"}
 JWT_COOKIE_NAME = "bf_access"
 JWT_COOKIE_SECURE = not DEBUG
 

@@ -57,6 +57,38 @@ frontend/
 | `GET, POST /api/tasks/<task_id>/subtasks/` | List/create checklist items |
 | `GET, PUT, PATCH, DELETE /api/tasks/<task_id>/subtasks/<id>/` | Manage a checklist item |
 | `POST /api/tasks/<task_id>/subtasks/reorder/` | Atomically reorder a task's complete checklist |
+| `GET /api/weather/` | Public, rate-limited IP-localized weather and day/night state |
+
+### Local weather icons
+
+`core.utils.get_ip(request)` validates the socket IP. Forwarded IPs are used only
+when the immediate peer matches `WEATHER_TRUSTED_PROXIES` (comma-separated proxy
+IPs/CIDRs). The chain is checked right-to-left. Configure the proxy to overwrite
+or safely append the client IP; do not trust arbitrary client-supplied headers.
+
+The weather endpoint sends the visitor's **public IP** to `https://ipwho.is` for
+approximate coordinates and an IANA timezone, then sends coordinates to wttr.in
+through `python-weather`. Location, not timezone alone, determines weather.
+Geolocation is cached for 24 hours; forecasts for 10 minutes. Day/night is
+recomputed in that timezone using the forecast's sunrise/sunset. Cache keys do
+not contain raw IPs, and responses never expose the visitor's IP or coordinates.
+The default Django cache is process-local; configure a shared cache for multiple
+workers if needed. No API key is required.
+
+The endpoint also works before login and is limited to 30 requests/minute per IP.
+For local/Docker development, set `WEATHER_DEV_IP=<your-public-ip>` in `.env`
+with `DEBUG=True`, then recreate the backend with
+`docker compose up -d --no-deps --force-recreate backend` (or restart the local
+Django process). This overrides only private/local request IPs, never actual
+public visitor IPs or the rate-limit identity. The override is completely ignored
+when `DEBUG=False`; invalid or private override IPs are rejected in development.
+
+Without the override, private/loopback IPs are not sent to external services: local development shows
+a browser-local sun/moon fallback, as do provider failures. It does **not**
+pretend the backend's public IP is the visitor's location. The shared frontend
+`WeatherIcon` replaces the former sun icons and refreshes every five minutes.
+Rain, drizzle, snow, sleet, clouds, fog, wind, and storm/hazard icons take priority
+over clear day/night symbols, so night rain still shows rain.
 
 ## Projects, tasks, and subtasks
 
@@ -92,7 +124,11 @@ Content-Type: application/json
 
 Statuses: `todo`, `in_progress`, `completed`. Priorities: `low`, `normal`,
 `high`, `urgent`. New tasks default to `todo`/`normal`; initial checklist items
-start unchecked. Due dates and times are optional, but a time requires a date.
+default to unchecked and accept optional `is_completed` flags. Create Task and
+Task Details share the same checklist UI (Enter/+ to add, check, drag to reorder,
+and delete). In Create Task, the draft checklist is saved atomically with the
+task, including its order and completion flags. Due dates and times are optional,
+but a time requires a date.
 Dates are calendar dates; times carry no timezone and should be interpreted in
 the application's configured timezone. Completion timestamps are timezone-aware
 and managed by the server on both status updates and completion/reopen actions.

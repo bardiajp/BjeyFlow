@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import type { Project } from '@/app/projects/types';
 import { createTask } from '../api/create';
@@ -14,6 +14,7 @@ import { LabeledTextarea } from '@/components/form/labeled-textarea';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { setValidationErrors } from '@/lib/form';
+import { SubtaskChecklist } from './subtask-checklist';
 
 export function TaskForm({
     task,
@@ -49,7 +50,10 @@ export function TaskForm({
             subtasks: [],
         },
     });
-    const { fields, append, remove } = useFieldArray({ control, name: 'subtasks' });
+    const { fields, append, remove, move } = useFieldArray({ control, name: 'subtasks' });
+    const [subtaskTitle, setSubtaskTitle] = useState('');
+    const subtasks = watch('subtasks');
+    const checklistItems = fields.map((field, index) => ({ ...field, ...subtasks[index] }));
     const dueDate = watch('due_date');
     const availableProjects = projects.filter(
         (project) => !project.is_archived || project.id === task?.project
@@ -66,7 +70,7 @@ export function TaskForm({
                 ? updateTask(task.id, body)
                 : createTask({
                       ...body,
-                      subtasks: subtasks.map((item, position) => ({ title: item.title, position })),
+                      subtasks: subtasks.map((item, position) => ({ ...item, position })),
                   });
         },
         onSuccess: async () => {
@@ -79,7 +83,18 @@ export function TaskForm({
             className="grid gap-5"
             noValidate
             onSubmit={handleSubmit((values) => {
-                const parsed = taskSchema.safeParse(values);
+                // Don't silently discard text if Create task is clicked before the +.
+                const parsed = taskSchema.safeParse(
+                    !task && subtaskTitle.trim()
+                        ? {
+                              ...values,
+                              subtasks: [
+                                  ...values.subtasks,
+                                  { title: subtaskTitle.trim(), is_completed: false },
+                              ],
+                          }
+                        : values
+                );
                 if (!parsed.success) return setValidationErrors(parsed.error.issues, setError);
                 if (!mutation.isPending) mutation.mutate(parsed.data);
             })}
@@ -150,45 +165,36 @@ export function TaskForm({
                     )}
                 </div>
                 {!task && (
-                    <div className="grid gap-3">
-                        <p className="text-sm font-medium">
-                            Subtasks{' '}
-                            <span className="font-normal text-neutral-400">· optional</span>
-                        </p>
-                        {fields.map((field, index) => (
-                            <div key={field.id}>
-                                <div className="flex items-start gap-2">
-                                    <LabeledInput
-                                        label={`Subtask ${index + 1}`}
-                                        containerClassName="min-w-0 flex-1"
-                                        aria-label={`Subtask ${index + 1}`}
-                                        placeholder="One small step…"
-                                        error={errors.subtasks?.[index]?.title?.message}
-                                        {...register(`subtasks.${index}.title`)}
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="destructive"
-                                        size="icon-sm"
-                                        className="mt-5 shrink-0"
-                                        aria-label={`Remove subtask ${index + 1}`}
-                                        onClick={() => remove(index)}
-                                    >
-                                        <Trash2 size={15} className="text-secondary" />
-                                    </Button>
-                                </div>
-                            </div>
-                        ))}
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            className="w-fit gap-2 px-0 text-sm"
-                            onClick={() => append({ title: '' })}
-                        >
-                            <Plus size={16} />
-                            Add subtask
-                        </Button>
-                    </div>
+                    <SubtaskChecklist
+                        items={checklistItems}
+                        title={subtaskTitle}
+                        onTitleChange={setSubtaskTitle}
+                        onAdd={() => {
+                            if (!subtaskTitle.trim() || mutation.isPending) return;
+                            append(
+                                { title: subtaskTitle.trim(), is_completed: false },
+                                { shouldFocus: false }
+                            );
+                            setSubtaskTitle('');
+                        }}
+                        onToggle={(id, completed) => {
+                            const index = fields.findIndex((field) => field.id === id);
+                            if (index >= 0)
+                                setValue(`subtasks.${index}.is_completed`, completed, {
+                                    shouldDirty: true,
+                                });
+                        }}
+                        onDelete={(id) => {
+                            const index = fields.findIndex((field) => field.id === id);
+                            if (index >= 0) remove(index);
+                        }}
+                        onReorder={(_, { from, to }) => move(from, to)}
+                        disabled={mutation.isPending}
+                        error={
+                            errors.subtasks?.root?.message ||
+                            errors.subtasks?.find?.((item) => item?.title?.message)?.title?.message
+                        }
+                    />
                 )}
             </fieldset>
             <DisplayError error={mutation.error} />

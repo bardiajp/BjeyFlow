@@ -68,6 +68,7 @@ export function TaskFilterPanel({
             </LabeledSelect>
             <Button
                 variant="ghost"
+                className="mt-2 h-auto min-h-[50px] self-stretch"
                 onClick={() => onChange({ project: '', priority: '', status: '' })}
             >
                 Clear filters

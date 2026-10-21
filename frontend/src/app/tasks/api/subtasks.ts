@@ -1,6 +1,10 @@
 import { axiosInstance } from '@/lib/api';
 import type { SubTask } from '../types';
 
+export async function deleteSubTask(taskId: string, id: string) {
+    await axiosInstance.delete(`api/tasks/${taskId}/subtasks/${id}/`);
+}
+
 export async function setSubTaskCompleted(taskId: string, id: string, completed: boolean) {
     return (
         await axiosInstance.patch<SubTask>(`api/tasks/${taskId}/subtasks/${id}/`, {

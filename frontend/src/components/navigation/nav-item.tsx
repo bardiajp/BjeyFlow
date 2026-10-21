@@ -32,11 +32,11 @@ export function NavItem({
                 cn(
                     'flex min-h-11 items-center gap-3 rounded-[10px] border border-neutral-500 px-3.5 py-2.5 text-sm transition-colors',
                     project
-                        ? 'hover:bg-muted/60 border-transparent bg-[#ebebeb]'
+                        ? 'rounded-lg border-transparent bg-[#ebebeb] px-3 outline-none hover:bg-accent focus-visible:bg-accent'
                         : 'hover:bg-primary/15',
                     isActive &&
                         (project
-                            ? 'bg-primary/55 hover:bg-muted/60 font-semibold'
+                            ? 'bg-primary/55 hover:bg-accent font-semibold'
                             : 'bg-primary/55 hover:bg-primary/55 font-semibold'),
                     className
                 )

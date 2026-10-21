@@ -23,4 +23,4 @@ class SubTaskSerializer(serializers.ModelSerializer):
 class SubTaskCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubTask
-        fields = ("title", "position")
+        fields = ("title", "position", "is_completed")

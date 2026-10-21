@@ -1,25 +1,33 @@
-import { Bell, ChevronRight, PanelLeft, Plus } from 'lucide-react';
+import { ChevronRight, PanelLeft, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
-import type { RefObject } from 'react';
+import { Fragment, type RefObject } from 'react';
 import { Button } from '@/components/ui/button';
 import { SearchInput } from '@/components/search-input';
+import type { Task } from '@/app/tasks/types';
+import { RemindersDropdown } from './reminders';
 
 export function AppHeader({
     title,
+    breadcrumbParents,
     search,
     onSearch,
     searchRef,
     onToggleSidebar,
     onCreateTask,
-    onReminders,
+    tasks,
+    today,
+    onOpenTask,
 }: {
     title: string;
+    breadcrumbParents: { label: string; to: string }[];
     search: string;
     onSearch: (value: string) => void;
     searchRef: RefObject<HTMLInputElement | null>;
     onToggleSidebar: () => void;
     onCreateTask: () => void;
-    onReminders: () => void;
+    tasks: Task[];
+    today: string;
+    onOpenTask: (id: string) => void;
 }) {
     const navigate = useNavigate();
     return (
@@ -33,11 +41,28 @@ export function AppHeader({
                 >
                     <PanelLeft size={20} strokeWidth={1.5} />
                 </Button>
-                <Link to="/inbox" className="hidden text-sm sm:inline">
-                    My projects
-                </Link>
-                <ChevronRight size={15} className="hidden sm:block" />
-                <span className="max-w-48 truncate text-sm font-medium">{title}</span>
+                <nav aria-label="Breadcrumb" className="min-w-0">
+                    <ol className="flex min-w-0 items-center gap-2 text-sm sm:gap-3">
+                        {breadcrumbParents.map((parent) => (
+                            <Fragment key={parent.to}>
+                                <li className="shrink-0">
+                                    <Link
+                                        to={parent.to}
+                                        className="text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        {parent.label}
+                                    </Link>
+                                </li>
+                                <li aria-hidden="true" className="shrink-0">
+                                    <ChevronRight size={15} />
+                                </li>
+                            </Fragment>
+                        ))}
+                        <li aria-current="page" className="max-w-48 truncate font-medium">
+                            {title}
+                        </li>
+                    </ol>
+                </nav>
             </div>
             <div className="flex min-w-0 flex-1 items-center justify-end gap-2 sm:flex-none sm:gap-4">
                 <div className="min-w-0 flex-1">
@@ -48,14 +73,7 @@ export function AppHeader({
                         onSubmit={() => navigate('/inbox')}
                     />
                 </div>
-                <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Task reminders"
-                    onClick={onReminders}
-                >
-                    <Bell size={20} strokeWidth={1.5} />
-                </Button>
+                <RemindersDropdown tasks={tasks} today={today} onOpenTask={onOpenTask} />
                 <Button
                     aria-label="Add task"
                     onClick={onCreateTask}

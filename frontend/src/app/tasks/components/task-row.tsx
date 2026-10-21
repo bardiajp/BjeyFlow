@@ -47,16 +47,18 @@ export function TaskRow({
         >
             <div className={cn('flex items-center gap-4 py-6', board && 'flex-wrap gap-3 py-1')}>
                 {dragHandle}
-                <Checkbox
-                    checked={completed}
-                    disabled={disabled || toggle.isPending}
-                    aria-label={`${completed ? 'Reopen' : 'Complete'} task: ${task.title}`}
-                    onCheckedChange={(value) => toggle.mutate(value)}
-                    className={cn(
-                        'border-primary size-6 shrink-0 rounded-full data-checked:text-white',
-                        completed && 'bg-primary text-white'
-                    )}
-                />
+                {!board && (
+                    <Checkbox
+                        checked={completed}
+                        disabled={disabled || toggle.isPending}
+                        aria-label={`${completed ? 'Reopen' : 'Complete'} task: ${task.title}`}
+                        onCheckedChange={(value) => toggle.mutate(value)}
+                        className={cn(
+                            'border-primary size-6 shrink-0 rounded-full data-checked:text-white',
+                            completed && 'bg-primary text-white'
+                        )}
+                    />
+                )}
                 <div className="min-w-0 flex-1">
                     <button
                         type="button"
@@ -88,7 +90,7 @@ export function TaskRow({
                 <div
                     className={cn(
                         'flex shrink-0 items-center gap-2',
-                        board && 'ml-9 w-full justify-end'
+                        board && 'w-full justify-end'
                     )}
                 >
                     {task.due_date && (

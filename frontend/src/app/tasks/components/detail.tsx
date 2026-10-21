@@ -1,66 +1,82 @@
-import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { Trash2 } from 'lucide-react';
 import type { Project } from '@/app/projects/types';
 import { deleteTask } from '../api/delete';
 import { useInvalidateTasks } from '../hooks/use-invalidate-tasks';
 import type { Task } from '../types';
-import ConfirmDialog from '@/components/confirm-dialog';
+import DisplayError from '@/components/display-error';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from '@/components/ui/drawer';
 import { TaskChecklist } from './checklist';
 import { TaskForm } from './form';
 
-export function TaskDetailDialog({
+export function TaskDetailDrawer({
+    open,
     task,
     projects,
     onClose,
+    onClosed,
 }: {
-    task: Task;
+    open: boolean;
+    task?: Task;
     projects: Project[];
     onClose: () => void;
+    onClosed: () => void;
 }) {
     const invalidate = useInvalidateTasks();
-    const [confirmDelete, setConfirmDelete] = useState(false);
+    const remove = useMutation({
+        mutationFn: deleteTask,
+        onSuccess: async () => {
+            onClose();
+            await invalidate();
+        },
+    });
     return (
         <>
-            <Dialog
-                open
+            <Drawer
+                open={open && !!task}
                 onOpenChange={(open) => {
-                    if (!open) onClose();
+                    if (!open && !remove.isPending) onClose();
+                }}
+                onOpenChangeComplete={(isOpen) => {
+                    if (!isOpen) {
+                        remove.reset();
+                        onClosed();
+                    }
                 }}
             >
-                <DialogContent className="sm:max-w-xl">
-                    <DialogTitle>Task details</DialogTitle>
-                    <DialogDescription>
-                        {task.project_name} · Make a little room for progress.
-                    </DialogDescription>
-                    <TaskForm task={task} projects={projects} onClose={onClose} />
-                    <TaskChecklist task={task} />
-                    <Button
-                        variant="destructive"
-                        className="w-fit gap-2"
-                        onClick={() => setConfirmDelete(true)}
-                    >
-                        <Trash2 size={14} className="text-secondary" />
-                        Delete task
-                    </Button>
-                </DialogContent>
-            </Dialog>
-            {confirmDelete && (
-                <ConfirmDialog
-                    title="Delete this task?"
-                    description="This also removes its subtasks. This cannot be undone."
-                    destructive
-                    action={() => deleteTask(task.id)}
-                    onSuccess={async () => {
-                        await invalidate();
-                        onClose();
-                    }}
-                    onClose={() => {
-                        setConfirmDelete(false);
-                    }}
-                />
-            )}
+                <DrawerContent>
+                    {task && (
+                        <div className="grid gap-5">
+                            <div className="grid gap-2">
+                                <DrawerTitle>Task details</DrawerTitle>
+                                <DrawerDescription>
+                                    {task.project_name} · Make a little room for progress.
+                                </DrawerDescription>
+                            </div>
+                            <TaskForm
+                                key={task.id}
+                                task={task}
+                                projects={projects}
+                                onClose={onClose}
+                            />
+                            <TaskChecklist task={task} />
+                            <DisplayError error={remove.error} />
+                            <div className="flex justify-end">
+                                <Button
+                                    variant="destructive"
+                                    className="w-fit gap-2"
+                                    isPending={remove.isPending}
+                                    onClick={() => remove.mutate(task.id)}
+                                >
+                                    <Trash2 size={14} className="text-secondary" />
+                                    Delete task
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DrawerContent>
+            </Drawer>
         </>
     );
 }

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, Sun } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { login } from '../api/login';
@@ -10,6 +10,7 @@ import { LabeledInput } from '@/components/form/labeled';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import useUserStore from '@/store/use-user-store';
+import { WeatherIcon } from '@/components/weather-icon';
 
 export default function LoginForm() {
     const navigate = useNavigate();
@@ -43,7 +44,7 @@ export default function LoginForm() {
             })}
         >
             <div className="flex items-center gap-2">
-                <Sun className="text-secondary" aria-hidden="true" />
+                <WeatherIcon className="text-secondary" aria-hidden="true" />
                 <span className="font-semibold">YOUR SPACE TO FOCUS</span>
             </div>
             <h1 id="login-title" className="text-[38px] font-bold">

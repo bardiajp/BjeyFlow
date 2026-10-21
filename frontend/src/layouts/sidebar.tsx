@@ -1,14 +1,4 @@
-import {
-    CalendarDays,
-    ChevronDown,
-    CircleCheck,
-    CircleHelp,
-    Pencil,
-    Inbox,
-    Plus,
-    SlidersHorizontal,
-    Sun,
-} from 'lucide-react';
+import { CalendarDays, CircleCheck, Pencil, Inbox, Plus } from 'lucide-react';
 import { Link } from 'react-router';
 import ballIcon from '@/assets/ball.svg';
 import { useAppData } from '@/app/tasks/hooks/use-app-data';
@@ -18,6 +8,8 @@ import DisplayError from '@/components/display-error';
 import { addDays } from '@/lib/date';
 import useUserStore from '@/store/use-user-store';
 import { projectIcons } from '@/app/projects/icons';
+import { AccountMenu } from './account-menu';
+import { WeatherIcon } from '@/components/weather-icon';
 
 export function AppSidebar({
     today,
@@ -44,7 +36,7 @@ export function AppSidebar({
     const all = tasks.data;
     return (
         <aside
-            className="flex h-dvh flex-col overflow-y-auto border-r border-neutral-300 bg-white px-4 pt-7 pb-5"
+            className="flex h-dvh flex-col justify-between overflow-y-auto border-r border-neutral-300 bg-white px-4 py-6"
             aria-label="Primary navigation"
         >
             <Link to="/today" onClick={onNavigate} className="mb-9 flex items-center gap-3 px-3">
@@ -53,7 +45,7 @@ export function AppSidebar({
                     BjeyFlow
                 </span>
             </Link>
-            <nav className="grid gap-1.5" aria-label="Task views">
+            <nav className="grid w-full gap-1.5" aria-label="Task views">
                 <NavItem
                     to="/inbox"
                     icon={Inbox}
@@ -63,7 +55,7 @@ export function AppSidebar({
                 />
                 <NavItem
                     to="/today"
-                    icon={Sun}
+                    icon={WeatherIcon}
                     label="Today"
                     count={all?.filter((task) => task.due_date === today).length}
                     onNavigate={onNavigate}
@@ -89,7 +81,7 @@ export function AppSidebar({
                     onNavigate={onNavigate}
                 />
             </nav>
-            <section className="mt-8">
+            <section className="mt-8 w-full">
                 <div className="mb-3 flex items-center justify-between px-3">
                     <h2 className="text-xs font-semibold">MY PROJECTS</h2>
                     <Button
@@ -139,35 +131,14 @@ export function AppSidebar({
                     </p>
                 )}
             </section>
-            <div className="mt-auto grid gap-1.5 pt-14">
-                <NavItem
-                    to="/settings"
-                    icon={SlidersHorizontal}
-                    label="Settings"
-                    project
+            <div className="w-full pt-14">
+                <AccountMenu
+                    name={name}
+                    initials={initials}
                     onNavigate={onNavigate}
+                    onHelp={onHelp}
                 />
-                <Button
-                    variant="ghost"
-                    className="h-11 justify-start gap-3 rounded-[10px] bg-[#ebebeb] px-3.5 text-sm font-normal"
-                    onClick={onHelp}
-                >
-                    <CircleHelp size={19} strokeWidth={1.5} />
-                    Help & shortcuts
-                </Button>
             </div>
-            <Link
-                to="/settings"
-                onClick={onNavigate}
-                className="mt-7 flex items-center gap-3 border-t border-neutral-200 px-2 pt-6"
-                aria-label={`Account settings for ${name}`}
-            >
-                <span className="text-secondary flex size-10 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-sm">
-                    {initials}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-sm font-medium">{name}</span>
-                <ChevronDown size={15} />
-            </Link>
         </aside>
     );
 }

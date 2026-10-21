@@ -44,8 +44,11 @@ function BoardColumn({
             ref={setNodeRef}
             aria-label={`${title} column`}
             className={cn(
-                'min-h-44 min-w-0 rounded-xl border border-transparent bg-neutral-50 p-3 transition-colors',
-                isOver && 'border-primary bg-primary/10'
+                'min-h-44 min-w-0 rounded-xl border border-transparent p-3 transition-colors',
+                status === 'todo' && 'bg-sky-50',
+                status === 'in_progress' && 'bg-amber-50',
+                status === 'completed' && 'bg-emerald-50',
+                isOver && 'border-primary ring-primary/30 ring-2'
             )}
         >
             <h2 className="mb-4 flex justify-between text-sm font-semibold">
@@ -159,8 +162,8 @@ export function TaskBoard({
         <div className="grid gap-4">
             <DisplayError error={mutation.error} />
             <p className="text-muted-foreground text-xs">
-                Drag the handles to reorder cards or move them between columns. Keyboard: Space,
-                arrow keys, Space.
+                Drag cards to reorder them or move them between columns. Keyboard: Space, arrow
+                keys, Space.
             </p>
             <DndContext
                 sensors={sensors}
@@ -185,15 +188,15 @@ export function TaskBoard({
                                                 id={task.id}
                                                 label={`Move task: ${task.title}`}
                                                 disabled={mutation.isPending}
+                                                dragWholeItem
                                             >
-                                                {(handle) => (
+                                                {() => (
                                                     <TaskRow
                                                         task={task}
                                                         today={today}
                                                         onOpen={onOpen}
                                                         board
                                                         disabled={mutation.isPending}
-                                                        dragHandle={handle}
                                                     />
                                                 )}
                                             </SortableItem>

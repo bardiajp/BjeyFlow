@@ -18,11 +18,14 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { setValidationErrors } from '@/lib/form';
+import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from '@/components/ui/drawer';
 
-export function CreateProjectDialog({
+export function ProjectEditor({
+    open = true,
     onClose,
     project,
 }: {
+    open?: boolean;
     onClose: () => void;
     project?: Project;
 }) {
@@ -32,6 +35,7 @@ export function CreateProjectDialog({
         control,
         handleSubmit,
         setError,
+        reset,
         formState: { errors },
     } = useForm<ProjectFormValues>({
         defaultValues: {
@@ -50,22 +54,33 @@ export function CreateProjectDialog({
             onClose();
         },
     });
+    const Container = project ? Dialog : Drawer;
+    const Content = project ? DialogContent : DrawerContent;
+    const Title = project ? DialogTitle : DrawerTitle;
+    const Description = project ? DialogDescription : DrawerDescription;
     return (
-        <Dialog
-            open
+        <Container
+            open={open}
+            {...(!project ? { swipeDirection: 'left' as const } : {})}
+            onOpenChangeComplete={(isOpen) => {
+                if (!isOpen) {
+                    reset();
+                    mutation.reset();
+                }
+            }}
             onOpenChange={(open) => {
                 if (!open && !mutation.isPending) onClose();
             }}
         >
-            <DialogContent>
-                <DialogTitle>
-                    {project ? 'Edit project' : 'A little space for your next idea.'}
-                </DialogTitle>
-                <DialogDescription>
-                    {project
-                        ? 'Update your project details, color, and icon.'
-                        : 'Create a project to keep related tasks together.'}
-                </DialogDescription>
+            <Content>
+                <div className="mb-6 grid gap-2">
+                    <Title>{project ? 'Edit project' : 'A little space for your next idea.'}</Title>
+                    <Description>
+                        {project
+                            ? 'Update your project details, color, and icon.'
+                            : 'Create a project to keep related tasks together.'}
+                    </Description>
+                </div>
                 <form
                     className="grid gap-5"
                     noValidate
@@ -128,7 +143,7 @@ export function CreateProjectDialog({
                         </Button>
                     </DialogFooter>
                 </form>
-            </DialogContent>
-        </Dialog>
+            </Content>
+        </Container>
     );
 }

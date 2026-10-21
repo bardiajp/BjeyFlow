@@ -47,5 +47,7 @@ export type TaskInput = Pick<
     Task,
     'project' | 'title' | 'description' | 'priority' | 'status' | 'due_date' | 'due_time'
 >;
-export type CreateTask = TaskInput & { subtasks: { title: string; position: number }[] };
+export type CreateTask = TaskInput & {
+    subtasks: { title: string; position: number; is_completed?: boolean }[];
+};
 import type { ProjectIconName } from '@/app/projects/types';

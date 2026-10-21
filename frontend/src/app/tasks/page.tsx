@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { ArrowDownUp, Columns3, List, Plus, SlidersHorizontal, Sun } from 'lucide-react';
+import { ArrowDownUp, Columns3, List, Plus, SlidersHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { listTasks } from './api/list';
@@ -20,6 +20,7 @@ import { useTaskLayout } from '@/layouts/context';
 import { addDays } from '@/lib/date';
 import { cn } from '@/lib/utils';
 import useUserStore from '@/store/use-user-store';
+import { WeatherIcon } from '@/components/weather-icon';
 
 export default function TasksPage({ view }: { view: TaskView }) {
     const { projectId } = useParams();
@@ -102,7 +103,7 @@ export default function TasksPage({ view }: { view: TaskView }) {
     return (
         <div>
             <div className="mb-6 flex items-center gap-3 text-sm">
-                <Sun size={20} className="text-secondary" strokeWidth={1.5} />
+                <WeatherIcon size={20} className="text-secondary" strokeWidth={1.5} />
                 <span>
                     {new Date(`${today}T12:00:00`).toLocaleDateString([], {
                         weekday: 'long',
@@ -255,7 +256,7 @@ export default function TasksPage({ view }: { view: TaskView }) {
                         )
                     ) : (
                         <div className="grid justify-items-center gap-4 rounded-xl border border-dashed border-neutral-200 px-6 py-14 text-center">
-                            <Sun size={27} className="text-primary" strokeWidth={1.3} />
+                            <WeatherIcon size={27} className="text-primary" strokeWidth={1.3} />
                             <h2 className="text-lg font-medium">A little breathing room.</h2>
                             <p className="max-w-xs text-sm leading-relaxed text-neutral-500">
                                 {search || filterCount
@@ -279,12 +280,14 @@ export default function TasksPage({ view }: { view: TaskView }) {
                 </section>
                 {mode === 'list' && (
                     <aside
-                        className="grid gap-9 sm:grid-cols-2 xl:grid-cols-1 xl:gap-10"
+                        className="grid gap-9 sm:grid-cols-2 xl:grid-cols-1 xl:gap-10 xl:pb-64"
                         aria-label="Your day at a glance"
                     >
                         <FocusSession />
                         <Schedule tasks={all} today={today} onOpen={openTask} />
-                        <WeeklyActivity tasks={all} today={today} />
+                        <div className="xl:bg-background xl:fixed xl:right-10 xl:bottom-6 xl:z-10 xl:w-[290px] xl:pt-4 2xl:w-[330px]">
+                            <WeeklyActivity tasks={all} today={today} />
+                        </div>
                     </aside>
                 )}
             </div>

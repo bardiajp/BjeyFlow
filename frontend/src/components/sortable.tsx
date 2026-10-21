@@ -22,11 +22,13 @@ export function SortableItem({
     id,
     label,
     disabled,
+    dragWholeItem = false,
     children,
 }: {
     id: string;
     label: string;
     disabled?: boolean;
+    dragWholeItem?: boolean;
     children: (handle: ReactNode) => ReactNode;
 }) {
     const {
@@ -57,15 +59,37 @@ export function SortableItem({
         <div
             ref={setNodeRef}
             data-sortable-id={id}
+            {...(dragWholeItem ? attributes : {})}
+            {...(dragWholeItem ? listeners : {})}
+            aria-label={dragWholeItem ? label : undefined}
+            className={
+                dragWholeItem
+                    ? 'focus-visible:ring-primary touch-none rounded-xl outline-none focus-visible:ring-2'
+                    : undefined
+            }
+            onKeyDown={
+                dragWholeItem
+                    ? (event) => {
+                          if (event.target === event.currentTarget) listeners?.onKeyDown?.(event);
+                      }
+                    : undefined
+            }
             style={{
                 transform: CSS.Transform.toString(transform),
                 transition,
                 opacity: isDragging ? 0.45 : 1,
                 position: 'relative',
                 zIndex: isDragging ? 1 : undefined,
+                cursor: dragWholeItem
+                    ? disabled
+                        ? 'wait'
+                        : isDragging
+                          ? 'grabbing'
+                          : 'grab'
+                    : undefined,
             }}
         >
-            {children(handle)}
+            {children(dragWholeItem ? null : handle)}
         </div>
     );
 }
@@ -80,7 +104,7 @@ export function SortableList<T extends { id: string }>({
     items: T[];
     label: (item: T) => string;
     disabled?: boolean;
-    onReorder: (items: T[]) => void;
+    onReorder: (items: T[], move: { from: number; to: number }) => void;
     children: (item: T, handle: ReactNode) => ReactNode;
 }) {
     const sensors = useSensors(
@@ -94,7 +118,7 @@ export function SortableList<T extends { id: string }>({
         if (!over || active.id === over.id || disabled) return;
         const from = items.findIndex((item) => item.id === active.id);
         const to = items.findIndex((item) => item.id === over.id);
-        if (from >= 0 && to >= 0) onReorder(arrayMove(items, from, to));
+        if (from >= 0 && to >= 0) onReorder(arrayMove(items, from, to), { from, to });
     };
     return (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>

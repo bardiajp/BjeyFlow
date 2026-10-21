@@ -1,11 +1,12 @@
 import type { Project } from '@/app/projects/types';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from '@/components/ui/drawer';
 import { TaskForm } from './form';
 import Loading from '@/components/loading';
 import DisplayError from '@/components/display-error';
 
-export function CreateTaskDialog({
+export function CreateTaskDrawer({
+    open,
     projects,
     projectId,
     dueDate,
@@ -14,6 +15,7 @@ export function CreateTaskDialog({
     loading,
     error,
 }: {
+    open: boolean;
     projects: Project[];
     projectId?: string;
     dueDate?: string;
@@ -24,15 +26,17 @@ export function CreateTaskDialog({
 }) {
     const available = projects.filter((project) => !project.is_archived);
     return (
-        <Dialog
-            open
+        <Drawer
+            open={open}
             onOpenChange={(open) => {
                 if (!open) onClose();
             }}
         >
-            <DialogContent className="sm:max-w-xl">
-                <DialogTitle>A little step forward.</DialogTitle>
-                <DialogDescription>Add a task to one of your projects.</DialogDescription>
+            <DrawerContent>
+                <div className="mb-6 grid gap-2">
+                    <DrawerTitle>A little step forward.</DrawerTitle>
+                    <DrawerDescription>Add a task to one of your projects.</DrawerDescription>
+                </div>
                 {loading ? (
                     <div className="py-8 text-center">
                         <Loading />
@@ -64,7 +68,7 @@ export function CreateTaskDialog({
                         </Button>
                     </div>
                 )}
-            </DialogContent>
-        </Dialog>
+            </DrawerContent>
+        </Drawer>
     );
 }

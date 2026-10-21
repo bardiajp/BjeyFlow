@@ -13,7 +13,10 @@ export const taskSchema = z
             z.literal(''),
         ]),
         subtasks: z.array(
-            z.object({ title: z.string().trim().min(1, 'Give this subtask a title.').max(255) })
+            z.object({
+                title: z.string().trim().min(1, 'Give this subtask a title.').max(255),
+                is_completed: z.boolean().default(false),
+            })
         ),
     })
     .superRefine((values, context) => {

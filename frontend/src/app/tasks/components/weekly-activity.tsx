@@ -33,7 +33,7 @@ export function WeeklyActivity({ tasks, today }: { tasks: Task[]; today: string 
                         <div className="flex h-20 items-end">
                             <div
                                 className={cn(
-                                    'w-full rounded-sm bg-neutral-200',
+                                    'w-full rounded-sm bg-neutral-200 transition-[height,background-color,opacity] duration-500 ease-in-out motion-reduce:transition-none',
                                     day.day === today && 'bg-primary',
                                     day.count === 0 && 'opacity-30'
                                 )}
@@ -42,7 +42,7 @@ export function WeeklyActivity({ tasks, today }: { tasks: Task[]; today: string 
                         </div>
                         <span
                             className={cn(
-                                'text-[11px] text-neutral-500',
+                                'text-[11px] text-neutral-500 transition-colors duration-500 motion-reduce:transition-none',
                                 day.day === today && 'text-primary font-semibold'
                             )}
                         >

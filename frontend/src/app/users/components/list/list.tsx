@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import type { PanelUser } from '../../types';
 import {
     Card,
@@ -19,15 +20,17 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import useUserStore from '@/store/use-user-store';
-import ActivatePanelUser from '../activate';
 import CreatePanelUser from '../create';
-import DeletePanelUser from '../delete';
-import DisablePanelUser from '../disable';
 import EditPanelUser from '../edit';
 import ResetPanelUserPassword from '../reset-password';
 import { userColumns } from './columns';
+import { activatePanelUser } from '../../api/activate-user';
+import { disablePanelUser } from '../../api/disable-user';
+import { deletePanelUser } from '../../api/panel-users';
+import useInvalidateUsers from '../use-invalidate-users';
+import DisplayError from '@/components/display-error';
 
-type Action = 'edit' | 'delete' | 'activate' | 'disable' | 'reset';
+type Action = 'edit' | 'reset';
 
 export default function UsersList({
     users,
@@ -39,6 +42,15 @@ export default function UsersList({
     isRefetching: boolean;
 }) {
     const currentUser = useUserStore((state) => state.user);
+    const invalidate = useInvalidateUsers();
+    const action = useMutation({
+        mutationFn: async ({ id, type }: { id: string; type: 'delete' | 'activate' | 'disable' }) => {
+            if (type === 'delete') await deletePanelUser(id);
+            else if (type === 'activate') await activatePanelUser(id);
+            else await disablePanelUser(id);
+        },
+        onSuccess: invalidate,
+    });
     const [search, setSearch] = useState('');
     const [selected, setSelected] = useState<{ user: PanelUser; action: Action } | null>(null);
     const close = () => setSelected(null);
@@ -58,6 +70,7 @@ export default function UsersList({
                     </CardAction>
                 </CardHeader>
                 <CardContent className="grid gap-4">
+                    <DisplayError error={action.error} />
                     <div className="flex gap-3">
                         <Input
                             type="search"
@@ -104,7 +117,7 @@ export default function UsersList({
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    disabled={self}
+                                                    disabled={self || action.isPending}
                                                     onClick={() =>
                                                         setSelected({ user, action: 'reset' })
                                                     }
@@ -114,11 +127,11 @@ export default function UsersList({
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    disabled={self}
+                                                    disabled={self || action.isPending}
                                                     onClick={() =>
-                                                        setSelected({
-                                                            user,
-                                                            action: user.is_active
+                                                        action.mutate({
+                                                            id: user.id,
+                                                            type: user.is_active
                                                                 ? 'disable'
                                                                 : 'activate',
                                                         })
@@ -129,9 +142,12 @@ export default function UsersList({
                                                 <Button
                                                     size="sm"
                                                     variant="destructive"
-                                                    disabled={self}
+                                                    disabled={self || action.isPending}
                                                     onClick={() =>
-                                                        setSelected({ user, action: 'delete' })
+                                                        action.mutate({
+                                                            id: user.id,
+                                                            type: 'delete',
+                                                        })
                                                     }
                                                 >
                                                     Delete
@@ -156,15 +172,6 @@ export default function UsersList({
                 </CardContent>
             </Card>
             {selected?.action === 'edit' && <EditPanelUser user={selected.user} onClose={close} />}
-            {selected?.action === 'delete' && (
-                <DeletePanelUser user={selected.user} onClose={close} />
-            )}
-            {selected?.action === 'activate' && (
-                <ActivatePanelUser user={selected.user} onClose={close} />
-            )}
-            {selected?.action === 'disable' && (
-                <DisablePanelUser user={selected.user} onClose={close} />
-            )}
             {selected?.action === 'reset' && (
                 <ResetPanelUserPassword user={selected.user} onClose={close} />
             )}

@@ -3,10 +3,12 @@ import { Pause, Play, RotateCcw, Sprout } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
-const DURATION = 25 * 60;
+const DEFAULT_MINUTES = 25;
 
 export function FocusSession() {
-    const [remaining, setRemaining] = useState(DURATION);
+    const [minutes, setMinutes] = useState(String(DEFAULT_MINUTES));
+    const [durationMinutes, setDurationMinutes] = useState(DEFAULT_MINUTES);
+    const [remaining, setRemaining] = useState(DEFAULT_MINUTES * 60);
     const [end, setEnd] = useState<number | null>(null);
     const [started, setStarted] = useState(false);
     useEffect(() => {
@@ -31,7 +33,50 @@ export function FocusSession() {
                 </div>
                 <h2 className="text-xl leading-snug font-semibold">Make room for deep work.</h2>
                 <p className="mt-3 text-sm leading-relaxed">
-                    A quiet 25 minutes to move your most important task forward.
+                    A quiet{' '}
+                    <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={3}
+                        aria-label="Focus session duration in minutes"
+                        title="Changing the duration resets the timer"
+                        value={minutes}
+                        disabled={end !== null}
+                        style={{ width: `${Math.max(1, minutes.length)}ch` }}
+                        className="text-primary focus-visible:border-primary min-w-0 rounded-none border-0 border-b border-dotted border-neutral-400 bg-transparent p-0 text-center leading-[inherit] outline-none focus-visible:border-solid disabled:opacity-60"
+                        onChange={(event) => {
+                            const value = event.target.value;
+                            if (!/^\d{0,3}$/.test(value)) return;
+                            setMinutes(value);
+                            const next = Number(value);
+                            if (!Number.isInteger(next) || next < 1 || next > 999) return;
+                            setDurationMinutes(next);
+                            setRemaining(next * 60);
+                            setStarted(false);
+                        }}
+                        onBlur={() => setMinutes(String(durationMinutes))}
+                        onKeyDown={(event) => {
+                            if (
+                                ['.', ',', 'e', 'E', '+', '-'].includes(event.key) &&
+                                !event.ctrlKey &&
+                                !event.metaKey
+                            ) {
+                                event.preventDefault();
+                            }
+                            if (event.key === 'Enter') {
+                                event.preventDefault();
+                                event.currentTarget.blur();
+                            }
+                        }}
+                        onPaste={(event) => {
+                            if (!/^\d{1,3}$/.test(event.clipboardData.getData('text'))) {
+                                event.preventDefault();
+                            }
+                        }}
+                    />{' '}
+                    {durationMinutes === 1 ? 'minute' : 'minutes'} to move your most important task
+                    forward.
                 </p>
                 {started && (
                     <div
@@ -55,7 +100,7 @@ export function FocusSession() {
                             setEnd(null);
                         } else {
                             setStarted(true);
-                            const next = remaining || DURATION;
+                            const next = remaining || durationMinutes * 60;
                             setRemaining(next);
                             setEnd(Date.now() + next * 1000);
                         }
@@ -74,7 +119,7 @@ export function FocusSession() {
                         className="mt-2 w-full gap-2 text-xs text-neutral-500"
                         onClick={() => {
                             setEnd(null);
-                            setRemaining(DURATION);
+                            setRemaining(durationMinutes * 60);
                             setStarted(false);
                         }}
                     >

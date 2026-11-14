@@ -5,14 +5,20 @@ import { useInvalidateTasks } from '../hooks/use-invalidate-tasks';
 import type { Task, SubTask } from '../types';
 import { reorderSubTasks } from '../api/reorder';
 import { SubtaskChecklist } from './subtask-checklist';
+import { toast } from '@/components/ui/toast';
 
-export function TaskChecklist({ task }: { task: Task }) {
+export function TaskChecklist({ task, className }: { task: Task; className?: string }) {
     const invalidate = useInvalidateTasks();
     const [title, setTitle] = useState('');
     const [ordered, setOrdered] = useState<SubTask[] | null>(null);
     const remove = useMutation({
         mutationFn: (id: string) => deleteSubTask(task.id, id),
         onSuccess: async () => {
+            toast.add({
+                type: 'warning',
+                title: 'Subtask deleted',
+                description: 'The subtask has been removed from your checklist.',
+            });
             setOrdered(null);
             await invalidate();
         },
@@ -24,6 +30,11 @@ export function TaskChecklist({ task }: { task: Task }) {
                 items.map((item) => item.id)
             ),
         onSuccess: async () => {
+            toast.add({
+                type: 'info',
+                title: 'Checklist reordered',
+                description: 'Your subtask order has been saved.',
+            });
             await invalidate();
             setOrdered(null);
         },
@@ -35,7 +46,16 @@ export function TaskChecklist({ task }: { task: Task }) {
     const toggle = useMutation({
         mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
             setSubTaskCompleted(task.id, id, completed),
-        onSuccess: invalidate,
+        onSuccess: async (_, { completed }) => {
+            toast.add({
+                type: 'info',
+                title: completed ? 'Subtask completed' : 'Subtask reopened',
+                description: completed
+                    ? 'The subtask is marked as completed.'
+                    : 'The subtask is back on your checklist.',
+            });
+            await invalidate();
+        },
     });
     const create = useMutation({
         mutationFn: (title: string) =>
@@ -45,6 +65,11 @@ export function TaskChecklist({ task }: { task: Task }) {
                 Math.max(-1, ...task.subtasks.map((item) => item.position)) + 1
             ),
         onSuccess: async () => {
+            toast.add({
+                type: 'success',
+                title: 'Subtask created successfully',
+                description: 'The subtask has been added to your checklist successfully.',
+            });
             setTitle('');
             await invalidate();
         },
@@ -52,6 +77,7 @@ export function TaskChecklist({ task }: { task: Task }) {
     const busy = reorder.isPending || toggle.isPending || create.isPending || remove.isPending;
     return (
         <SubtaskChecklist
+            className={className}
             items={ordered ?? task.subtasks}
             title={title}
             onTitleChange={setTitle}

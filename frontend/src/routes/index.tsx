@@ -43,6 +43,7 @@ export default function AppRoutes() {
             ) : (
                 <>
                     <Route path="login" element={<Login />} />
+                    <Route path="signup" element={<Login signup />} />
                     <Route path="*" element={<Navigate to="/login" replace />} />
                 </>
             )}

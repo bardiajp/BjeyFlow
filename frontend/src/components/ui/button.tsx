@@ -5,14 +5,14 @@ import { cn } from '@/lib/utils';
 import Loading from '@/components/loading';
 
 const buttonVariants = cva(
-    'inline-flex items-center justify-center rounded-sm border border-transparent bg-clip-padding text-sm font-medium transition-all outline-none select-none disabled:pointer-events-none disabled:opacity-50',
+    'flow-control inline-flex items-center justify-center rounded-sm border border-transparent bg-clip-padding text-sm font-medium outline-none select-none disabled:pointer-events-none disabled:opacity-50',
     {
         variants: {
             variant: {
-                default: 'bg-primary hover:bg-primary/90',
-                outline: 'border border-input bg-background hover:bg-accent',
-                ghost: 'hover:bg-accent',
-                cancel: 'border border-input bg-background hover:bg-accent',
+                default: 'bg-primary text-[#023047]',
+                outline: 'border border-input bg-background',
+                ghost: '',
+                cancel: 'border border-input bg-background',
                 destructive:
                     'border-secondary bg-secondary/10 hover:bg-secondary/20 [&_svg]:text-secondary',
             },
@@ -46,7 +46,7 @@ function Button({
     return (
         <ButtonPrimitive
             data-slot="button"
-            className={cn(buttonVariants({ variant, size, className }), 'text-button-foreground')}
+            className={cn('text-button-foreground', buttonVariants({ variant, size }), className)}
             disabled={disabled || isPending}
             aria-busy={isPending || undefined}
             {...props}

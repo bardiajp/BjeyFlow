@@ -144,6 +144,14 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
 
 AUTH_USER_MODEL = "users.User"
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
 
 JWT_SECRET_KEY = env("JWT_SECRET_KEY", default=SECRET_KEY)
 JWT_ACCESS_TOKEN_LIFETIME_SECONDS = env("JWT_ACCESS_TOKEN_LIFETIME_SECONDS")
@@ -162,9 +170,32 @@ if WEATHER_DEV_IP:
         ) from exc
 WEATHER_CACHE_SECONDS = 600
 WEATHER_REQUEST_TIMEOUT = 4
-REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {"weather": "30/min"}
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {
+    "weather": "30/min",
+    "signup_burst": "5/min",
+    "signup_hourly": "20/hour",
+    "signup_verify": "30/min",
+}
 JWT_COOKIE_NAME = "bf_access"
 JWT_COOKIE_SECURE = not DEBUG
+
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.console.EmailBackend"
+    if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend",
+)
+EMAIL_HOST = env("EMAIL_HOST", default="localhost")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)
+EMAIL_TIMEOUT = 10
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="BjeyFlow <noreply@localhost>")
+SIGNUP_CODE_LIFETIME_SECONDS = 600
+SIGNUP_RESEND_SECONDS = 60
+SIGNUP_MAX_ATTEMPTS = 5
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(seconds=JWT_ACCESS_TOKEN_LIFETIME_SECONDS),

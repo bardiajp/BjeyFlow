@@ -1,6 +1,7 @@
 import { useId, useState, type Ref } from 'react';
 import { Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { FieldFrame } from './field-frame';
 
@@ -61,14 +62,14 @@ export function ColorInput({
     };
 
     return (
-        <div
-            dir="ltr"
-            className={cn('grid grid-cols-2 items-start gap-3 sm:gap-4 ', containerClassName)}
-        >
+        <div dir="ltr" className={cn('grid min-w-0 gap-3', containerClassName)}>
+            <span className="text-sm font-medium" id={`${inputId}-presets-label`}>
+                {label}
+            </span>
             <div
-                className="col-start-1 row-start-1 grid grid-cols-3 grid-rows-2 gap-2 pt-2 pl-2"
+                className="grid grid-cols-2 gap-2 sm:grid-cols-3"
                 role="group"
-                aria-label={`${label} presets`}
+                aria-labelledby={`${inputId}-presets-label`}
             >
                 {presets.map((color) => (
                     <button
@@ -79,35 +80,40 @@ export function ColorInput({
                         disabled={disabled}
                         title={`${color.label} · ${color.value}`}
                         onClick={() => choose(color.value)}
-                        className={cn(
-                            'focus-visible:outline-primary flex size-7 items-center justify-center rounded-full border border-black/10 transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-                            selected === color.value && 'ring-primary ring-2 ring-offset-2'
-                        )}
-                        style={{ backgroundColor: color.value }}
+                        className="flow-control group focus-visible:ring-primary rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        {selected === color.value && (
-                            <Check
-                                size={14}
-                                strokeWidth={2.5}
+                        <Badge
+                            variant="outline"
+                            className={cn(
+                                'text-primary-foreground flex h-10 w-full gap-2 border-neutral-200 bg-white px-3 text-xs transition-colors',
+                                selected === color.value && 'border-primary bg-primary/25'
+                            )}
+                        >
+                            <span
+                                className="size-3.5 shrink-0 rounded-full border border-black/10"
+                                style={{ backgroundColor: color.value }}
                                 aria-hidden="true"
-                                className={
-                                    color.value === '#023047' || color.value === '#696969'
-                                        ? 'text-white'
-                                        : 'text-button-foreground'
-                                }
                             />
-                        )}
+                            <span className="truncate">{color.label}</span>
+                            {selected === color.value && (
+                                <Check
+                                    size={15}
+                                    strokeWidth={2.5}
+                                    aria-hidden="true"
+                                    className="ml-auto shrink-0"
+                                />
+                            )}
+                        </Badge>
                     </button>
                 ))}
             </div>
             <FieldFrame
                 id={inputId}
-                label={label}
+                label="Custom color"
                 error={error}
                 description={description}
                 variant="color"
-                containerClassName="col-start-2 row-start-1"
-                controlClassName="h-16"
+                controlClassName="h-12"
             >
                 <div className="flex h-full min-h-0 items-center gap-2 px-2 py-1 sm:gap-3 sm:px-3">
                     <span className="focus-within:ring-primary relative block size-6 shrink-0 overflow-hidden rounded-md border border-black/10 focus-within:ring-2 focus-within:ring-offset-2 sm:size-8">

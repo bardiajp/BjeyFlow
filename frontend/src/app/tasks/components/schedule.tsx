@@ -16,21 +16,27 @@ export function Schedule({
         .filter((task) => task.due_date === today && task.due_time && task.status !== 'completed')
         .sort((a, b) => a.due_time!.localeCompare(b.due_time!));
     return (
-        <section className="py-2">
-            <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-sm font-semibold">On your schedule</h2>
-                <CalendarDays size={18} strokeWidth={1.5} />
+        <section className="rounded-[22px] border border-slate-200/80 bg-white p-5 shadow-[0_4px_24px_-16px_#02304720]">
+            <div className="mb-5 flex items-center justify-between gap-2">
+                <h2 className="text-primary-foreground text-[13px] font-semibold">
+                    On your schedule
+                </h2>
+                <span className="bg-primary/15 text-primary-foreground flex size-8 items-center justify-center rounded-xl">
+                    <CalendarDays size={16} strokeWidth={1.5} />
+                </span>
             </div>
             <div className="grid gap-6">
                 {scheduled.slice(0, 4).map((task, index) => (
                     <button
                         type="button"
                         key={task.id}
-                        className="border-l-2 pl-4 text-left"
-                        style={{ borderColor: index % 2 ? '#8ECAE6' : '#171717' }}
+                        className="focus-visible:outline-primary rounded-r-xl border-l-2 py-1 pl-3 text-left transition-colors hover:bg-slate-50"
+                        style={{ borderColor: index % 2 ? '#8ECAE6' : '#023047' }}
                         onClick={() => onOpen(task.id)}
                     >
-                        <span className="text-xs">{formatTime(task.due_time!)}</span>
+                        <span className="text-primary-foreground text-[10px] font-medium">
+                            {formatTime(task.due_time!)}
+                        </span>
                         <span className="mt-1 block text-sm font-medium">{task.title}</span>
                         <span className="mt-1 block text-xs text-neutral-500">
                             {task.project_name}
@@ -38,17 +44,20 @@ export function Schedule({
                     </button>
                 ))}
                 {!scheduled.length && (
-                    <p className="text-sm leading-relaxed text-neutral-400">
+                    <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-3 py-4 text-xs leading-relaxed text-slate-400">
                         A little space in your day. Tasks with a due time will appear here.
                     </p>
                 )}
             </div>
             <Link
                 to="/upcoming"
-                className="mt-6 inline-flex items-center gap-2 text-sm font-medium"
+                className="group text-primary-foreground mt-5 inline-flex items-center gap-2 text-xs font-medium"
             >
                 View upcoming tasks
-                <ArrowRight size={15} />
+                <ArrowRight
+                    size={14}
+                    className="transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
+                />
             </Link>
         </section>
     );

@@ -9,7 +9,28 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from users.auth import change_password
-from users.serializers.auth import ChangePasswordSerializer, LoginSerializer
+from users.serializers.auth import (
+    ChangePasswordSerializer,
+    LoginSerializer,
+    UserProfileSerializer,
+)
+
+
+def authenticated_response(user, remember_me=True):
+    refresh = RefreshToken.for_user(user)
+    response = Response(
+        {"user": UserProfileSerializer(user).data}, status=status.HTTP_200_OK
+    )
+    response.set_cookie(
+        settings.JWT_COOKIE_NAME,
+        str(refresh.access_token),
+        httponly=True,
+        secure=settings.JWT_COOKIE_SECURE,
+        samesite="Lax",
+        max_age=settings.JWT_ACCESS_TOKEN_LIFETIME_SECONDS if remember_me else None,
+        path="/",
+    )
+    return response
 
 
 class LoginView(TokenObtainPairView):
@@ -20,34 +41,7 @@ class LoginView(TokenObtainPairView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user = serializer.user
-        refresh = RefreshToken.for_user(user)
-
-        response = Response(
-            {
-                "user": {
-                    "id": str(user.id),
-                    "username": user.username,
-                    "display_name": user.display_name,
-                    "role": user.role,
-                },
-            },
-            status=status.HTTP_200_OK,
-        )
-        response.set_cookie(
-            settings.JWT_COOKIE_NAME,
-            str(refresh.access_token),
-            httponly=True,
-            secure=settings.JWT_COOKIE_SECURE,
-            samesite="Lax",
-            max_age=(
-                settings.JWT_ACCESS_TOKEN_LIFETIME_SECONDS
-                if serializer.remember_me
-                else None
-            ),
-            path="/",
-        )
-        return response
+        return authenticated_response(serializer.user, serializer.remember_me)
 
 
 class LogoutView(APIView):
@@ -75,13 +69,4 @@ class MeView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        return Response(
-            {
-                "user": {
-                    "id": str(request.user.id),
-                    "username": request.user.username,
-                    "display_name": request.user.display_name,
-                    "role": request.user.role,
-                },
-            }
-        )
+        return Response({"user": UserProfileSerializer(request.user).data})

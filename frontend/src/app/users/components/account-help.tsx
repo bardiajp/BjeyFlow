@@ -6,7 +6,7 @@ const helpContent = {
     account: {
         title: 'Your administrator can help',
         description:
-            'BjeyFlow accounts are created by your organization’s administrator. Contact them to request an account or get help signing in.',
+            'Create an account from Sign up and verify your email with a six-digit code. For an existing managed account or trouble signing in, contact your workspace administrator.',
     },
     password: {
         title: 'Let’s get you back in',

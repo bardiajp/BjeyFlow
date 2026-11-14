@@ -10,6 +10,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/toast';
 import { Input } from '@/components/ui/input';
 import {
     Table,
@@ -44,12 +45,29 @@ export default function UsersList({
     const currentUser = useUserStore((state) => state.user);
     const invalidate = useInvalidateUsers();
     const action = useMutation({
-        mutationFn: async ({ id, type }: { id: string; type: 'delete' | 'activate' | 'disable' }) => {
+        mutationFn: async ({
+            id,
+            type,
+        }: {
+            id: string;
+            type: 'delete' | 'activate' | 'disable';
+        }) => {
             if (type === 'delete') await deletePanelUser(id);
             else if (type === 'activate') await activatePanelUser(id);
             else await disablePanelUser(id);
         },
-        onSuccess: invalidate,
+        onSuccess: async (_, { type }) => {
+            const messages = {
+                delete: {
+                    title: 'User deleted',
+                    description: 'The user account has been removed.',
+                },
+                activate: { title: 'User activated', description: 'The user can now sign in.' },
+                disable: { title: 'User disabled', description: 'The user can no longer sign in.' },
+            };
+            toast.add({ type: type === 'delete' ? 'warning' : 'info', ...messages[type] });
+            await invalidate();
+        },
     });
     const [search, setSearch] = useState('');
     const [selected, setSelected] = useState<{ user: PanelUser; action: Action } | null>(null);

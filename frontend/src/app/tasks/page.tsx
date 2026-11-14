@@ -1,14 +1,25 @@
 import { useQuery } from '@tanstack/react-query';
-import { ArrowDownUp, Columns3, List, Plus, SlidersHorizontal } from 'lucide-react';
+import {
+    ArrowDown,
+    ArrowDownUp,
+    ArrowUp,
+    CalendarDays,
+    CaseSensitive,
+    List,
+    Plus,
+    SlidersHorizontal,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { listTasks } from './api/list';
 import { TaskBoard } from './components/board';
 import { TaskFilterPanel, type TaskFilterValues } from './components/filter';
+import { TaskControlDropdown, TaskControlOption } from './components/control-dropdown';
 import { FocusSession } from './components/focus-session';
 import { TaskList } from './components/list';
-import { Schedule } from './components/schedule';
 import { WeeklyActivity } from './components/weekly-activity';
+import { TaskCalendar } from './components/calendar';
+import { TaskViewTabs, type TaskDisplayMode } from './components/view-tabs';
 import { useAppData } from './hooks/use-app-data';
 import type { TaskFilters, TaskView } from './types';
 import DisplayError from '@/components/display-error';
@@ -21,14 +32,17 @@ import { addDays } from '@/lib/date';
 import { cn } from '@/lib/utils';
 import useUserStore from '@/store/use-user-store';
 import { WeatherIcon } from '@/components/weather-icon';
+import { PageTransition } from '@/components/page-transition';
+import { usePreferences } from '@/store/use-preferences';
+import { AccentTitle } from '@/components/accent-title';
 
 export default function TasksPage({ view }: { view: TaskView }) {
     const { projectId } = useParams();
     const { today, search, openTask, createTask } = useTaskLayout();
     const user = useUserStore((state) => state.user);
     const overview = useAppData();
-    const [mode, setMode] = useState<'list' | 'board'>('list');
-    const [filterOpen, setFilterOpen] = useState(false);
+    const defaultView = usePreferences((state) => state.defaultView);
+    const [mode, setMode] = useState<TaskDisplayMode>(defaultView);
     const [filters, setFilters] = useState<TaskFilterValues>({
         project: '',
         priority: '',
@@ -90,7 +104,9 @@ export default function TasksPage({ view }: { view: TaskView }) {
     if (view === 'project' && overview.projects.isSuccess && !project)
         return (
             <div className="grid gap-4 py-16">
-                <h1 className="text-2xl font-semibold">Project not found.</h1>
+                <h1 className="text-2xl font-semibold">
+                    <AccentTitle>Project not found</AccentTitle>
+                </h1>
                 <p className="text-sm text-neutral-500">
                     This project may have been removed or isn’t available to your account.
                 </p>
@@ -102,131 +118,136 @@ export default function TasksPage({ view }: { view: TaskView }) {
 
     return (
         <div>
-            <div className="mb-6 flex items-center gap-3 text-sm">
-                <WeatherIcon size={20} className="text-secondary" strokeWidth={1.5} />
-                <span>
-                    {new Date(`${today}T12:00:00`).toLocaleDateString([], {
-                        weekday: 'long',
-                        month: 'long',
-                        day: 'numeric',
-                    })}
-                </span>
-            </div>
-            <div className="mb-9 flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
-                <div className="min-w-0">
-                    <h1 className="text-[28px] leading-tight font-semibold tracking-tight lg:text-[34px] 2xl:text-[40px]">
-                        {title}
-                    </h1>
-                    <p className="mt-4 text-sm leading-relaxed lg:text-base">
-                        {overview.tasks.isPending
-                            ? 'Finding a little focus for your day…'
-                            : description}
-                    </p>
+            <div className="surface-hero border-primary/20 relative mb-6 overflow-hidden rounded-[24px] border p-5 sm:p-7">
+                <div className="mb-5 flex items-center gap-2.5 text-xs font-medium text-slate-500">
+                    <span className="flex size-8 items-center justify-center rounded-xl border border-white bg-white/70">
+                        <WeatherIcon size={18} className="text-secondary" strokeWidth={1.5} />
+                    </span>
+                    <span>
+                        {new Date(`${today}T12:00:00`).toLocaleDateString([], {
+                            weekday: 'long',
+                            month: 'long',
+                            day: 'numeric',
+                        })}
+                    </span>
                 </div>
-                <div className="w-full shrink-0 sm:w-56 xl:mb-1 xl:w-64">
-                    <div className="mb-3 flex justify-between gap-3 text-xs">
-                        <span>Your daily progress</span>
-                        <span className="font-semibold tabular-nums">
-                            {completedToday} / {todayTasks.length}
-                        </span>
+                <div className="flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
+                    <div className="min-w-0">
+                        <h1 className="text-primary-foreground max-w-3xl text-[26px] leading-[1.15] font-semibold tracking-[-0.04em] lg:text-[32px] 2xl:text-[38px]">
+                            <AccentTitle>{title}</AccentTitle>
+                        </h1>
+                        <p className="mt-3 max-w-xl text-[13px] leading-relaxed text-slate-500 sm:text-sm">
+                            {overview.tasks.isPending
+                                ? 'Finding a little focus for your day…'
+                                : description}
+                        </p>
                     </div>
-                    <Progress
-                        value={completedToday}
-                        max={todayTasks.length}
-                        label="Daily task progress"
-                    />
+                    <div className="w-full shrink-0 rounded-2xl border border-white bg-white/75 p-4 shadow-[0_3px_12px_-8px_#02304730] sm:w-60 xl:w-64">
+                        <div className="mb-3 flex justify-between gap-3 text-xs text-slate-500">
+                            <span>Your daily progress</span>
+                            <span className="text-primary-foreground font-semibold tabular-nums">
+                                {completedToday} / {todayTasks.length}
+                            </span>
+                        </div>
+                        <Progress
+                            value={completedToday}
+                            max={todayTasks.length}
+                            label="Daily task progress"
+                            className="bg-primary/20 [&>div]:bg-brand"
+                        />
+                    </div>
                 </div>
             </div>
             <div
                 className={cn(
-                    'grid items-start gap-8 2xl:gap-12',
+                    'grid items-start gap-5 2xl:gap-6',
                     mode === 'list'
-                        ? 'xl:grid-cols-[minmax(0,1fr)_290px] 2xl:grid-cols-[minmax(0,1fr)_330px]'
+                        ? 'xl:grid-cols-[minmax(0,1fr)_280px] 2xl:grid-cols-[minmax(0,1fr)_310px]'
                         : 'grid-cols-1'
                 )}
             >
-                <section className="min-w-0" aria-label="Tasks">
-                    <div className="mb-2 flex flex-wrap items-center justify-between gap-4">
-                        <div className="flex gap-6">
-                            <button
-                                type="button"
-                                aria-pressed={mode === 'list'}
-                                className={cn(
-                                    'flex items-center gap-2 border-b-2 border-transparent pb-5 text-sm',
-                                    mode === 'list' && 'border-neutral-900 font-medium'
-                                )}
-                                onClick={() => setMode('list')}
+                <section
+                    className="min-w-0 rounded-[22px] border border-slate-200/80 bg-white p-3 shadow-[0_4px_24px_-16px_#02304720] sm:p-5"
+                    aria-label="Tasks"
+                >
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                        <TaskViewTabs value={mode} onChange={setMode} />
+                        <div className="flex items-center gap-2">
+                            <TaskControlDropdown
+                                label="Filter"
+                                description="A little less noise. Find what matters."
+                                icon={SlidersHorizontal}
+                                active={filterCount > 0}
+                                count={filterCount}
                             >
-                                <List size={18} strokeWidth={1.5} />
-                                List
-                            </button>
-                            <button
-                                type="button"
-                                aria-pressed={mode === 'board'}
-                                className={cn(
-                                    'flex items-center gap-2 border-b-2 border-transparent pb-5 text-sm',
-                                    mode === 'board' && 'border-neutral-900 font-medium'
-                                )}
-                                onClick={() => setMode('board')}
+                                <TaskFilterPanel
+                                    value={{
+                                        ...filters,
+                                        project:
+                                            view === 'project'
+                                                ? (projectId ?? '')
+                                                : filters.project,
+                                    }}
+                                    onChange={setFilters}
+                                    projects={overview.projects.data ?? []}
+                                    projectFixed={view === 'project'}
+                                    completedView={view === 'completed'}
+                                />
+                            </TaskControlDropdown>
+                            <TaskControlDropdown
+                                label="Sort"
+                                description="Put your tasks in the order that suits you."
+                                icon={ArrowDownUp}
+                                active={!!sort && mode === 'list'}
+                                disabled={mode !== 'list'}
                             >
-                                <Columns3 size={18} strokeWidth={1.5} />
-                                Board
-                            </button>
-                        </div>
-                        <div className="mb-5 flex items-center gap-3 sm:gap-5">
-                            <button
-                                type="button"
-                                aria-expanded={filterOpen}
-                                aria-controls="task-filters"
-                                className="border-muted flex h-9 w-24 items-center justify-center gap-2 rounded-lg border px-2 text-sm"
-                                onClick={() => setFilterOpen(!filterOpen)}
-                            >
-                                <SlidersHorizontal size={17} strokeWidth={1.5} />
-                                Filter
-                                {filterCount > 0 && (
-                                    <span className="bg-primary/30 rounded-full px-1.5 text-[10px]">
-                                        {filterCount}
-                                    </span>
-                                )}
-                            </button>
-                            <label className="border-muted flex h-9 w-24 items-center gap-2 rounded-lg border px-2">
-                                <ArrowDownUp size={17} strokeWidth={1.5} />
-                                <select
-                                    aria-label="Sort tasks"
-                                    disabled={mode === 'board'}
-                                    title={
-                                        mode === 'board'
-                                            ? 'Board order is controlled by dragging cards.'
-                                            : 'Sort tasks'
-                                    }
-                                    value={sort}
-                                    onChange={(event) => setSort(event.target.value)}
-                                    className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-sm outline-none"
-                                >
-                                    <option value="">Sort</option>
-                                    <option value="due_date,due_time">Due date</option>
-                                    <option value="title">Title</option>
-                                    <option value="-created_at">Newest first</option>
-                                    <option value="created_at">Oldest first</option>
-                                </select>
-                            </label>
+                                {[
+                                    {
+                                        value: '',
+                                        label: 'Default order',
+                                        icon: List,
+                                        description: 'The natural order for this view',
+                                    },
+                                    {
+                                        value: 'due_date,due_time',
+                                        label: 'Due date',
+                                        icon: CalendarDays,
+                                        description: 'Upcoming deadlines first',
+                                    },
+                                    {
+                                        value: 'title',
+                                        label: 'Title',
+                                        icon: CaseSensitive,
+                                        description: 'Alphabetically, A to Z',
+                                    },
+                                    {
+                                        value: '-created_at',
+                                        label: 'Newest first',
+                                        icon: ArrowDown,
+                                        description: 'Most recently created',
+                                    },
+                                    {
+                                        value: 'created_at',
+                                        label: 'Oldest first',
+                                        icon: ArrowUp,
+                                        description: 'Start with the earliest tasks',
+                                    },
+                                ].map((option) => (
+                                    <TaskControlOption
+                                        key={option.value}
+                                        name="task-sort"
+                                        value={option.value}
+                                        checked={sort === option.value}
+                                        onChange={() => setSort(option.value)}
+                                        description={option.description}
+                                        icon={<option.icon size={15} strokeWidth={1.7} />}
+                                    >
+                                        {option.label}
+                                    </TaskControlOption>
+                                ))}
+                            </TaskControlDropdown>
                         </div>
                     </div>
-                    {filterOpen && (
-                        <div id="task-filters">
-                            <TaskFilterPanel
-                                value={{
-                                    ...filters,
-                                    project:
-                                        view === 'project' ? (projectId ?? '') : filters.project,
-                                }}
-                                onChange={setFilters}
-                                projects={overview.projects.data ?? []}
-                                projectFixed={view === 'project'}
-                                completedView={view === 'completed'}
-                            />
-                        </div>
-                    )}
                     <DisplayError
                         error={overview.tasks.error || overview.projects.error}
                         onRetry={() => {
@@ -234,58 +255,70 @@ export default function TasksPage({ view }: { view: TaskView }) {
                             void overview.projects.refetch();
                         }}
                     />
-                    {query.isPending ? (
-                        <div className="grid gap-8 py-8" aria-label="Loading tasks">
-                            {[0, 1, 2, 3].map((index) => (
-                                <div className="flex items-center gap-4" key={index}>
-                                    <Skeleton className="size-6 rounded-full bg-neutral-100" />
-                                    <div className="grid flex-1 gap-3">
-                                        <Skeleton className="h-4 w-3/4 bg-neutral-100" />
-                                        <Skeleton className="h-3 w-1/3 bg-neutral-100" />
+                    <PageTransition key={mode} waitForAssets={false}>
+                        {query.isPending ? (
+                            <div className="grid gap-8 py-8" aria-label="Loading tasks">
+                                {[0, 1, 2, 3].map((index) => (
+                                    <div className="flex items-center gap-4" key={index}>
+                                        <Skeleton className="size-6 rounded-full bg-neutral-100" />
+                                        <div className="grid flex-1 gap-3">
+                                            <Skeleton className="h-4 w-3/4 bg-neutral-100" />
+                                            <Skeleton className="h-3 w-1/3 bg-neutral-100" />
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : query.error ? (
-                        <DisplayError error={query.error} onRetry={() => void query.refetch()} />
-                    ) : query.data?.length ? (
-                        mode === 'list' ? (
-                            <TaskList tasks={query.data} today={today} onOpen={openTask} />
+                                ))}
+                            </div>
+                        ) : query.error ? (
+                            <DisplayError
+                                error={query.error}
+                                onRetry={() => void query.refetch()}
+                            />
+                        ) : mode === 'calendar' ? (
+                            <TaskCalendar
+                                tasks={query.data ?? []}
+                                today={today}
+                                onOpen={openTask}
+                            />
+                        ) : query.data?.length ? (
+                            mode === 'list' ? (
+                                <TaskList tasks={query.data} today={today} onOpen={openTask} />
+                            ) : (
+                                <TaskBoard tasks={query.data} today={today} onOpen={openTask} />
+                            )
                         ) : (
-                            <TaskBoard tasks={query.data} today={today} onOpen={openTask} />
-                        )
-                    ) : (
-                        <div className="grid justify-items-center gap-4 rounded-xl border border-dashed border-neutral-200 px-6 py-14 text-center">
-                            <WeatherIcon size={27} className="text-primary" strokeWidth={1.3} />
-                            <h2 className="text-lg font-medium">A little breathing room.</h2>
-                            <p className="max-w-xs text-sm leading-relaxed text-neutral-500">
-                                {search || filterCount
-                                    ? 'No tasks match your search or filters. Try a little less specific.'
-                                    : view === 'completed'
-                                      ? 'Your completed tasks will appear here. One small step at a time.'
-                                      : 'Nothing on this list yet. Add a task when you’re ready.'}
-                            </p>
-                            {view !== 'completed' && (
-                                <Button
-                                    variant="outline"
-                                    className="gap-2"
-                                    onClick={() => createTask(projectId)}
-                                >
-                                    <Plus size={15} />
-                                    Add a task
-                                </Button>
-                            )}
-                        </div>
-                    )}
+                            <div className="grid justify-items-center gap-4 rounded-xl border border-dashed border-neutral-200 px-6 py-14 text-center">
+                                <WeatherIcon size={27} className="text-primary" strokeWidth={1.3} />
+                                <h2 className="text-lg font-medium">
+                                    <AccentTitle>A little breathing room</AccentTitle>
+                                </h2>
+                                <p className="max-w-xs text-sm leading-relaxed text-neutral-500">
+                                    {search || filterCount
+                                        ? 'No tasks match your search or filters. Try a little less specific.'
+                                        : view === 'completed'
+                                          ? 'Your completed tasks will appear here. One small step at a time.'
+                                          : 'Nothing on this list yet. Add a task when you’re ready.'}
+                                </p>
+                                {view !== 'completed' && (
+                                    <Button
+                                        variant="outline"
+                                        className="gap-2"
+                                        onClick={() => createTask(projectId)}
+                                    >
+                                        <Plus size={15} />
+                                        Add a task
+                                    </Button>
+                                )}
+                            </div>
+                        )}
+                    </PageTransition>
                 </section>
                 {mode === 'list' && (
                     <aside
-                        className="grid gap-9 sm:grid-cols-2 xl:grid-cols-1 xl:gap-10 xl:pb-64"
+                        className="page-fade-in grid min-w-0 gap-5 sm:grid-cols-2 xl:grid-cols-1"
                         aria-label="Your day at a glance"
                     >
                         <FocusSession />
-                        <Schedule tasks={all} today={today} onOpen={openTask} />
-                        <div className="xl:bg-background xl:fixed xl:right-10 xl:bottom-6 xl:z-10 xl:w-[290px] xl:pt-4 2xl:w-[330px]">
+                        <div>
                             <WeeklyActivity tasks={all} today={today} />
                         </div>
                     </aside>

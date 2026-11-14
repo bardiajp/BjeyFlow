@@ -1,5 +1,7 @@
 import { isAxiosError } from 'axios';
 import { ZodError } from 'zod';
+import { useEffect, useEffectEvent } from 'react';
+import { toast } from '@/components/ui/toast';
 
 function errorMessage(error: unknown): string {
     if (error instanceof ZodError) return error.issues.map((issue) => issue.message).join(' ');
@@ -21,18 +23,21 @@ function errorMessage(error: unknown): string {
 }
 
 export default function DisplayError({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
-    if (!error) return null;
-    return (
-        <div
-            role="alert"
-            className="border-destructive/30 bg-destructive/10 text-destructive rounded-md border p-3 text-sm"
-        >
-            {errorMessage(error)}
-            {onRetry && (
-                <button type="button" onClick={onRetry} className="ml-3 underline">
-                    Retry
-                </button>
-            )}
-        </div>
+    const message = error ? errorMessage(error) : null;
+    const showToast = useEffectEvent(() =>
+        toast.add({
+            type: 'destructive',
+            title: 'Something went wrong',
+            description: message,
+            actionProps: onRetry ? { children: 'Retry', onClick: onRetry } : undefined,
+        })
     );
+
+    useEffect(() => {
+        if (!message) return;
+        const id = showToast();
+        return () => toast.close(id);
+    }, [message]);
+
+    return null;
 }

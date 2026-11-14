@@ -22,7 +22,7 @@ export function Progress({
             className={cn('h-1.5 overflow-hidden rounded-full bg-neutral-200', className)}
         >
             <div
-                className="bg-primary h-full rounded-full transition-[width] motion-reduce:transition-none"
+                className="bg-primary h-full rounded-full transition-[width] duration-700 ease-in-out motion-reduce:transition-none"
                 style={{ width: `${percent}%` }}
             />
         </div>

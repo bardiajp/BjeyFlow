@@ -26,6 +26,7 @@ export function SubtaskChecklist<T extends ChecklistItem>({
     adding = false,
     deletingId,
     error,
+    className,
 }: {
     items: T[];
     title: string;
@@ -38,11 +39,15 @@ export function SubtaskChecklist<T extends ChecklistItem>({
     adding?: boolean;
     deletingId?: string;
     error?: unknown;
+    className?: string;
 }) {
     const prefix = useId();
     const completed = items.filter((item) => item.is_completed).length;
     return (
-        <section className="grid gap-3 border-t border-neutral-200 pt-5" aria-label="Subtasks">
+        <section
+            className={cn('grid gap-3 border-t border-neutral-200 pt-5', className)}
+            aria-label="Subtasks"
+        >
             <div className="flex justify-between text-sm font-medium">
                 <span>Subtasks</span>
                 <span className="text-neutral-500">

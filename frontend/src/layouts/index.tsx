@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Outlet, useLocation, useMatch } from 'react-router';
+import { Outlet, useLocation, useMatch, useNavigate } from 'react-router';
 import { ProjectEditor } from '@/app/projects/components/create';
 import { CreateTaskDrawer } from '@/app/tasks/components/create';
 import { TaskDetailDrawer } from '@/app/tasks/components/detail';
@@ -10,19 +10,22 @@ import { cn } from '@/lib/utils';
 import type { TaskLayoutContext } from './context';
 import { AppHeader } from './header';
 import { AppSidebar } from './sidebar';
-import { HelpDialog } from './help';
 import { PageTransition } from '@/components/page-transition';
+import { SearchDialog } from './search-dialog';
 
 export default function Layout() {
     const location = useLocation();
+    const navigate = useNavigate();
     const projectRoute = useMatch('/projects/:projectId');
     const { projects, tasks } = useAppData();
     const today = useLocalDate();
     const [search, setSearch] = useState('');
+    const [searchOpen, setSearchOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [projectOpen, setProjectOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<string | null>(null);
+    const [editingProjectOpen, setEditingProjectOpen] = useState(false);
     const [taskCreate, setTaskCreate] = useState<{ projectId?: string; dueDate?: string } | null>(
         null
     );
@@ -62,7 +65,7 @@ export default function Layout() {
         const handle = (event: KeyboardEvent) => {
             if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
                 event.preventDefault();
-                searchRef.current?.focus();
+                setSearchOpen(true);
                 return;
             }
             const target = event.target as HTMLElement;
@@ -97,21 +100,19 @@ export default function Layout() {
         createTask,
         createProject: () => setProjectOpen(true),
     };
-    const sidebar = (
+    const sidebar = (compact = false) => (
         <AppSidebar
+            collapsed={compact}
             today={today}
             onEditProject={(id) => {
                 setMobileOpen(false);
                 setEditingProject(id);
+                setEditingProjectOpen(true);
             }}
             onNavigate={() => setMobileOpen(false)}
             onCreateProject={() => {
                 setMobileOpen(false);
                 setProjectOpen(true);
-            }}
-            onHelp={() => {
-                setMobileOpen(false);
-                setHelpOpen(true);
             }}
         />
     );
@@ -119,28 +120,19 @@ export default function Layout() {
         <PageTransition>
             <div
                 className={cn(
-                    'min-h-dvh bg-white text-neutral-950 transition-[grid-template-columns] duration-500 ease-in-out motion-reduce:transition-none lg:grid lg:[--sidebar-width:250px] xl:[--sidebar-width:272px]',
+                    'bg-workspace min-h-dvh text-slate-800 transition-[grid-template-columns] duration-700 ease-in-out motion-reduce:transition-none lg:grid lg:[--sidebar-width:250px] xl:[--sidebar-width:272px]',
                     collapsed
-                        ? 'lg:grid-cols-[0px_minmax(0,1fr)]'
+                        ? 'lg:grid-cols-[76px_minmax(0,1fr)]'
                         : 'lg:grid-cols-[var(--sidebar-width)_minmax(0,1fr)]'
                 )}
             >
-                <div
-                    className="sticky top-0 hidden h-dvh min-w-0 overflow-hidden lg:block"
-                    inert={collapsed}
-                    aria-hidden={collapsed}
-                >
-                    <div
-                        className={cn(
-                            'w-(--sidebar-width) transition-[transform,opacity] duration-500 ease-in-out motion-reduce:transition-none',
-                            collapsed && '-translate-x-full opacity-0'
-                        )}
-                    >
-                        {sidebar}
-                    </div>
+                <div className="sticky top-0 hidden h-dvh min-w-0 overflow-hidden lg:block">
+                    {sidebar(collapsed)}
                 </div>
                 <div className="min-w-0">
                     <AppHeader
+                        helpOpen={helpOpen}
+                        onHelpOpenChange={setHelpOpen}
                         title={title}
                         breadcrumbParents={breadcrumbParents}
                         search={search}
@@ -156,7 +148,7 @@ export default function Layout() {
                         today={today}
                         onOpenTask={openTask}
                     />
-                    <main className="min-w-0 px-5 pt-8 pb-12 lg:px-8 xl:px-10">
+                    <main className="min-w-0 px-4 pt-6 pb-10 sm:px-6 lg:px-7 xl:px-8">
                         <PageTransition key={location.pathname}>
                             <Outlet context={context} />
                         </PageTransition>
@@ -165,18 +157,16 @@ export default function Layout() {
                 <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
                     <DialogContent className="top-0 left-0 h-dvh w-72 max-w-[85vw] translate-x-0 translate-y-0 rounded-none p-0 transition-transform duration-500 ease-in-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full motion-reduce:transition-none sm:max-w-72">
                         <DialogTitle className="sr-only">Navigation</DialogTitle>
-                        {sidebar}
+                        {sidebar()}
                     </DialogContent>
                 </Dialog>
                 <ProjectEditor open={projectOpen} onClose={() => setProjectOpen(false)} />
-                {editingProject &&
-                    projects.data?.find((project) => project.id === editingProject) && (
-                        <ProjectEditor
-                            key={editingProject}
-                            project={projects.data.find((project) => project.id === editingProject)}
-                            onClose={() => setEditingProject(null)}
-                        />
-                    )}
+                <ProjectEditor
+                    open={editingProjectOpen}
+                    project={projects.data?.find((project) => project.id === editingProject)}
+                    onClose={() => setEditingProjectOpen(false)}
+                    onClosed={() => setEditingProject(null)}
+                />
                 <CreateTaskDrawer
                     open={taskCreate !== null}
                     projects={projects.data ?? []}
@@ -194,7 +184,19 @@ export default function Layout() {
                     onClose={() => setTaskDetailOpen(false)}
                     onClosed={() => setSelectedTask(null)}
                 />
-                {helpOpen && <HelpDialog onClose={() => setHelpOpen(false)} />}
+                <SearchDialog
+                    open={searchOpen}
+                    onOpenChange={setSearchOpen}
+                    onOpenTask={(id) => {
+                        setSearchOpen(false);
+                        openTask(id);
+                    }}
+                    onSearchAll={(query) => {
+                        setSearch(query);
+                        setSearchOpen(false);
+                        navigate('/inbox');
+                    }}
+                />
             </div>
         </PageTransition>
     );

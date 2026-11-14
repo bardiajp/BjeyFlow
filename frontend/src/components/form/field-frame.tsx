@@ -67,13 +67,13 @@ export function FieldFrame({
             <div
                 data-slot="field-control"
                 className={cn(
-                    'border-primary bg-background focus-within:ring-primary/20 relative rounded-xl border p-1 transition-shadow focus-within:ring-2',
+                    'border-input bg-card focus-within:border-primary focus-within:ring-primary/20 relative rounded-[14px] border p-1 focus-within:ring-2',
                     controlClassName
                 )}
             >
                 <Label
                     htmlFor={id}
-                    className="bg-background text-primary absolute top-0 left-3 z-10 max-w-[calc(100%-1.5rem)] -translate-y-1/2 px-1.5 text-sm leading-none font-medium"
+                    className="bg-card text-muted-foreground absolute top-0 left-3 z-10 max-w-[calc(100%-1.5rem)] -translate-y-1/2 px-1.5 text-[11px] leading-none font-medium"
                 >
                     {label}
                     {required && (

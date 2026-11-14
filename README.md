@@ -39,6 +39,9 @@ frontend/
 | URL | Description |
 |-----|-------------|
 | `POST /users/auth/login/` | JWT login (sets httponly cookie) |
+| `POST /users/auth/signup/` | Start public registration and send an email code |
+| `POST /users/auth/signup/verify/` | Verify the code, create the account/project, and sign in |
+| `POST /users/auth/signup/resend/` | Send a replacement verification code |
 | `POST /users/auth/logout/` | JWT logout (clears cookie) |
 | `GET /users/auth/me/` | Current user |
 | `POST /users/auth/change-password/` | Change your own password |
@@ -58,6 +61,37 @@ frontend/
 | `GET, PUT, PATCH, DELETE /api/tasks/<task_id>/subtasks/<id>/` | Manage a checklist item |
 | `POST /api/tasks/<task_id>/subtasks/reorder/` | Atomically reorder a task's complete checklist |
 | `GET /api/weather/` | Public, rate-limited IP-localized weather and day/night state |
+
+### Sign up and email verification
+
+Open `/signup` from the Sign up card on the login page. Registration collects
+username, email, first/last name, and password, followed by optional flow name,
+focus rhythm, a north-star goal, and the first project's name. The final step
+supports pasting or autofilling one six-digit code and verifies automatically.
+
+No user account is created before verification. Pending passwords and codes are
+hashed. Codes expire after 10 minutes, allow five failed attempts, and can be
+replaced after 60 seconds. Replacements invalidate the previous code. Verified
+emails are unique case-insensitively; existing administrator-created accounts
+can keep an empty email. Public signup never grants staff or administrator access.
+
+With `DEBUG=True`, email defaults to Django's console backend. Read the newest
+message with `docker compose logs backend`; codes are never returned by the API.
+For real delivery, configure `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`,
+`EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `EMAIL_USE_SSL`, and `DEFAULT_FROM_EMAIL`.
+With `DEBUG=False`, the default backend is SMTP. To try SMTP locally, explicitly
+set `EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`. Use TLS on port
+587 or SSL on port 465, not both. Recreate the backend container after changing
+its environment. Run `docker compose exec backend python manage.py migrate`
+when deploying the new user fields and verification table.
+
+Registration/resends are additionally limited to five requests/minute and twenty
+requests/hour per socket IP; verification is limited to thirty requests/minute.
+These DRF limits use Django's cache: configure a shared cache for multi-worker
+deployments. Behind a proxy, socket-IP limits apply to the proxy rather than
+trusting arbitrary forwarded headers. Expired challenges are cleaned up on new
+registration requests. Successful verification creates a normal user and their
+first project atomically, then sets the same HTTP-only login cookie as Sign in.
 
 ### Local weather icons
 

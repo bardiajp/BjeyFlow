@@ -1,0 +1,9 @@
+[Unit]
+Description=Renew BjeyFlow TLS certificates
+Requires=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/bjeyflow
+ExecStart=/bin/sh /opt/bjeyflow/docker/production/renew-certificates.sh

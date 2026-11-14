@@ -9,6 +9,7 @@ from django.contrib.auth.hashers import check_password, make_password
 from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import APIException, Throttled, ValidationError
@@ -18,6 +19,7 @@ from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
 from core.models import Project
+from core.utils.ip import get_ip
 from users.models import SignupChallenge, User
 from users.serializers.auth import (
     SignupResendSerializer,
@@ -31,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 class SignupThrottle(AnonRateThrottle):
     def get_ident(self, request):
-        return request.META["REMOTE_ADDR"]
+        return get_ip(request)
 
 
 class SignupBurstThrottle(SignupThrottle):
@@ -63,13 +65,20 @@ def issue_code(challenge):
         seconds=settings.SIGNUP_CODE_LIFETIME_SECONDS
     )
     challenge.save()
+    email_context = {
+        "code": code,
+        "expiry_minutes": math.ceil(settings.SIGNUP_CODE_LIFETIME_SECONDS / 60),
+    }
     try:
         send_mail(
             "Your BjeyFlow verification code",
-            f"Your verification code is {code}.\n\nIt expires in 10 minutes. Do not share it with anyone.\nIf you did not request a BjeyFlow account, you can ignore this email.\n\nA little more flow,\nBjeyFlow",
+            render_to_string("users/emails/verification.txt", email_context),
             settings.DEFAULT_FROM_EMAIL,
             [challenge.email],
             fail_silently=False,
+            html_message=render_to_string(
+                "users/emails/verification.html", email_context
+            ),
         )
     except (SMTPException, OSError) as exc:
         logger.exception("Signup email delivery failed")

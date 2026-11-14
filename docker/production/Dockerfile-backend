@@ -1,0 +1,21 @@
+FROM python:3.13-slim AS builder
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+WORKDIR /build
+RUN apt-get update && apt-get install -y --no-install-recommends gcc && rm -rf /var/lib/apt/lists/*
+COPY backend/requirements/ /requirements/
+RUN pip wheel --no-cache-dir --wheel-dir /wheels -r /requirements/production.txt
+
+FROM python:3.13-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_DISABLE_PIP_VERSION_CHECK=1
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/* && groupadd --gid 10001 app && useradd --uid 10001 --gid app --no-create-home app
+COPY --from=builder /wheels /wheels
+COPY backend/requirements/ /requirements/
+RUN pip install --no-cache-dir --no-index --find-links=/wheels -r /requirements/production.txt && rm -rf /wheels
+COPY --chown=app:app backend/ /app/
+COPY --chown=app:app docker/production/backend-entrypoint.sh /entrypoint.sh
+RUN chmod 755 /entrypoint.sh && DEBUG=False DJANGO_SECRET_KEY=static-assets-build-key-not-used-for-runtime-authentication python manage.py collectstatic --noinput
+USER app
+EXPOSE 8000
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "2", "--timeout", "60", "--graceful-timeout", "30", "--max-requests", "1000", "--max-requests-jitter", "100", "--worker-tmp-dir", "/tmp", "--access-logfile", "-", "--error-logfile", "-"]

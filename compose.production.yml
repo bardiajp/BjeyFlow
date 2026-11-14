@@ -1,0 +1,175 @@
+name: bjeyflow
+
+x-logging: &logging
+  driver: local
+  options:
+    max-size: 10m
+    max-file: "3"
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?required}
+      POSTGRES_USER: ${POSTGRES_USER:?required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+    command: [postgres, -c, shared_buffers=128MB, -c, effective_cache_size=512MB, -c, max_connections=60]
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks: [app]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 768m
+    logging: *logging
+
+  cache:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: [redis-server, --appendonly, "yes", --maxmemory, 64mb, --maxmemory-policy, allkeys-lru]
+    volumes:
+      - redis_data:/data
+    networks: [app]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    mem_limit: 128m
+    logging: *logging
+
+  backend:
+    image: bjeyflow/backend:${RELEASE_TAG:-production}
+    build:
+      context: .
+      dockerfile: docker/production/Dockerfile-backend
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      REDIS_URL: redis://cache:6379/0
+      TRUST_PROXY: "true"
+      WEATHER_TRUSTED_PROXIES: 172.30.0.10/32
+      FORWARDED_ALLOW_IPS: 172.30.0.10
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    networks: [app]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz/', timeout=3)"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 768m
+    logging: *logging
+
+  web:
+    image: bjeyflow/web:${RELEASE_TAG:-production}
+    build:
+      context: .
+      dockerfile: docker/production/Dockerfile-frontend
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?required}
+      MAIL_HOST: ${MAIL_HOST:?required}
+      NGINX_ENVSUBST_FILTER: ^(APP_DOMAIN|MAIL_HOST)$$
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/production/nginx/${NGINX_TEMPLATE:-https.conf.template}:/etc/nginx/templates/default.conf.template:ro
+      - ./deploy-data/letsencrypt:/etc/letsencrypt:ro
+      - ./deploy-data/acme:/var/www/certbot:ro
+    networks:
+      app:
+        ipv4_address: 172.30.0.10
+    read_only: true
+    tmpfs: [/etc/nginx/conf.d, /var/cache/nginx, /var/run]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD-SHELL, 'wget -q -O /dev/null http://127.0.0.1/healthz']
+      interval: 20s
+      timeout: 5s
+      retries: 5
+    mem_limit: 128m
+    logging: *logging
+
+  mailserver:
+    image: ghcr.io/docker-mailserver/docker-mailserver:17.0.0
+    hostname: ${MAIL_HOST:?required}
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Tehran
+      SSL_TYPE: manual
+      SSL_CERT_PATH: /etc/letsencrypt/live/${APP_DOMAIN}/fullchain.pem
+      SSL_KEY_PATH: /etc/letsencrypt/live/${APP_DOMAIN}/privkey.pem
+      DMS_TRUSTED_NETWORKS: none
+      ENABLE_IMAP: "1"
+      ENABLE_POP3: "0"
+      ENABLE_CLAMAV: "0"
+      ENABLE_AMAVIS: "0"
+      ENABLE_SPAMASSASSIN: "0"
+      ENABLE_RSPAMD: "0"
+      ENABLE_OPENDKIM: "1"
+      ENABLE_OPENDMARC: "1"
+      ENABLE_POLICYD_SPF: "1"
+      ENABLE_FAIL2BAN: "0"
+      ENABLE_UPDATE_CHECK: "0"
+      SPOOF_PROTECTION: "1"
+      POSTFIX_INET_PROTOCOLS: ipv4
+      DOVECOT_INET_PROTOCOLS: ipv4
+      POSTFIX_MESSAGE_SIZE_LIMIT: "5242880"
+      LOGROTATE_INTERVAL: daily
+      LOGROTATE_COUNT: "7"
+    ports:
+      - "25:25"
+      - "465:465"
+      - "587:587"
+      - "993:993"
+    volumes:
+      - ./deploy-data/mail/config:/tmp/docker-mailserver
+      - ./deploy-data/mail/data:/var/mail
+      - ./deploy-data/mail/state:/var/mail-state
+      - ./deploy-data/mail/logs:/var/log/mail
+      - ./deploy-data/letsencrypt:/etc/letsencrypt:ro
+    networks:
+      app:
+        aliases:
+          - ${MAIL_HOST}
+    healthcheck:
+      test: [CMD-SHELL, "ss --listening --tcp --numeric | grep -q ':25 '"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    mem_limit: 768m
+    logging: *logging
+
+  certbot:
+    image: certbot/certbot:latest
+    profiles: [maintenance]
+    volumes:
+      - ./deploy-data/letsencrypt:/etc/letsencrypt
+      - ./deploy-data/acme:/var/www/certbot
+    networks: [app]
+    logging: *logging
+
+networks:
+  app:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+volumes:
+  postgres_data:
+  redis_data:

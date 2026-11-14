@@ -4,6 +4,9 @@
 
 ## Stack
 
+Production Docker/Nginx/TLS/mail deployment is documented in
+[`docker/production/README.md`](docker/production/README.md).
+
 - Python 3.11+, Django 5.2, DRF, simplejwt (JWT auth with httponly cookies)
 - React 19, Vite, TypeScript, Tailwind CSS 4, shadcn UI
 - PostgreSQL

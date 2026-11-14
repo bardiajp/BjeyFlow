@@ -1,34 +1,203 @@
-import { Link, Outlet } from 'react-router';
-import Logout from '@/app/users/components/logout';
-import ChangePassword from '@/app/users/components/change-password';
-import useUserStore from '@/store/use-user-store';
+import { useEffect, useRef, useState } from 'react';
+import { Outlet, useLocation, useMatch, useNavigate } from 'react-router';
+import { ProjectEditor } from '@/app/projects/components/create';
+import { CreateTaskDrawer } from '@/app/tasks/components/create';
+import { TaskDetailDrawer } from '@/app/tasks/components/detail';
+import { useAppData } from '@/app/tasks/hooks/use-app-data';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { useLocalDate } from '@/hooks/use-local-date';
+import { cn } from '@/lib/utils';
+import type { TaskLayoutContext } from './context';
+import { AppHeader } from './header';
+import { AppSidebar } from './sidebar';
+import { PageTransition } from '@/components/page-transition';
+import { SearchDialog } from './search-dialog';
 
 export default function Layout() {
-    const user = useUserStore((state) => state.user);
+    const location = useLocation();
+    const navigate = useNavigate();
+    const projectRoute = useMatch('/projects/:projectId');
+    const { projects, tasks } = useAppData();
+    const today = useLocalDate();
+    const [search, setSearch] = useState('');
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
+    const [projectOpen, setProjectOpen] = useState(false);
+    const [editingProject, setEditingProject] = useState<string | null>(null);
+    const [editingProjectOpen, setEditingProjectOpen] = useState(false);
+    const [taskCreate, setTaskCreate] = useState<{ projectId?: string; dueDate?: string } | null>(
+        null
+    );
+    const [selectedTask, setSelectedTask] = useState<string | null>(null);
+    const [taskDetailOpen, setTaskDetailOpen] = useState(false);
+    const openTask = (id: string) => {
+        setSelectedTask(id);
+        setTaskDetailOpen(true);
+    };
+    const [helpOpen, setHelpOpen] = useState(false);
+    const searchRef = useRef<HTMLInputElement>(null);
+    const selected = tasks.data?.find((task) => task.id === selectedTask);
+    const createTask = (projectId?: string) =>
+        setTaskCreate({
+            projectId: projectId ?? projectRoute?.params.projectId,
+            dueDate: location.pathname === '/today' ? today : undefined,
+        });
+    const titles: Record<string, string> = {
+        '/inbox': 'Inbox',
+        '/today': 'Today',
+        '/upcoming': 'Upcoming',
+        '/completed': 'Completed',
+        '/settings': 'Settings',
+        '/settings/users': 'User management',
+    };
+    const title = projectRoute
+        ? (projects.data?.find((project) => project.id === projectRoute.params.projectId)?.name ??
+          'Project')
+        : (titles[location.pathname] ?? 'Today');
+    const breadcrumbParents = [
+        { label: 'Home', to: '/today' },
+        ...(location.pathname === '/settings/users'
+            ? [{ label: 'Settings', to: '/settings' }]
+            : []),
+    ];
+    useEffect(() => {
+        const handle = (event: KeyboardEvent) => {
+            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+                event.preventDefault();
+                setSearchOpen(true);
+                return;
+            }
+            const target = event.target as HTMLElement;
+            if (
+                target.closest(
+                    'input, textarea, select, [contenteditable="true"], [role="dialog"]'
+                ) ||
+                event.metaKey ||
+                event.ctrlKey ||
+                event.altKey
+            )
+                return;
+            if (event.key.toLowerCase() === 'n') {
+                event.preventDefault();
+                setTaskCreate({
+                    dueDate: location.pathname === '/today' ? today : undefined,
+                    projectId: projectRoute?.params.projectId,
+                });
+            }
+            if (event.key === '?') setHelpOpen(true);
+        };
+        window.addEventListener('keydown', handle);
+        return () => window.removeEventListener('keydown', handle);
+    }, [location.pathname, today, projectRoute?.params.projectId]);
+    useEffect(() => {
+        document.title = `${title} · BjeyFlow`;
+    }, [title]);
+    const context: TaskLayoutContext = {
+        search,
+        today,
+        openTask,
+        createTask,
+        createProject: () => setProjectOpen(true),
+    };
+    const sidebar = (compact = false) => (
+        <AppSidebar
+            collapsed={compact}
+            today={today}
+            onEditProject={(id) => {
+                setMobileOpen(false);
+                setEditingProject(id);
+                setEditingProjectOpen(true);
+            }}
+            onNavigate={() => setMobileOpen(false)}
+            onCreateProject={() => {
+                setMobileOpen(false);
+                setProjectOpen(true);
+            }}
+        />
+    );
     return (
-        <div className="bg-muted/20 min-h-dvh">
-            <header className="bg-background flex flex-wrap items-center justify-between gap-4 border-b px-6 py-4">
-                <nav className="flex items-center gap-6">
-                    <Link to="/" className="text-lg font-semibold">
-                        BjeyFlow
-                    </Link>
-                    {user?.role === 'superuser' && (
-                        <Link to="/settings/users" className="text-sm">
-                            Users
-                        </Link>
-                    )}
-                </nav>
-                <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-muted-foreground text-sm">
-                        {user?.display_name || user?.username}
-                    </span>
-                    <ChangePassword />
-                    <Logout />
+        <PageTransition>
+            <div
+                className={cn(
+                    'bg-workspace min-h-dvh text-slate-800 transition-[grid-template-columns] duration-700 ease-in-out motion-reduce:transition-none lg:grid lg:[--sidebar-width:250px] xl:[--sidebar-width:272px]',
+                    collapsed
+                        ? 'lg:grid-cols-[76px_minmax(0,1fr)]'
+                        : 'lg:grid-cols-[var(--sidebar-width)_minmax(0,1fr)]'
+                )}
+            >
+                <div className="sticky top-0 hidden h-dvh min-w-0 overflow-hidden lg:block">
+                    {sidebar(collapsed)}
                 </div>
-            </header>
-            <main className="mx-auto flex max-w-7xl p-6">
-                <Outlet />
-            </main>
-        </div>
+                <div className="min-w-0">
+                    <AppHeader
+                        helpOpen={helpOpen}
+                        onHelpOpenChange={setHelpOpen}
+                        title={title}
+                        breadcrumbParents={breadcrumbParents}
+                        search={search}
+                        onSearch={setSearch}
+                        searchRef={searchRef}
+                        onToggleSidebar={() => {
+                            if (window.matchMedia('(min-width: 1024px)').matches)
+                                setCollapsed((value) => !value);
+                            else setMobileOpen(true);
+                        }}
+                        onCreateTask={() => createTask()}
+                        tasks={tasks.data ?? []}
+                        today={today}
+                        onOpenTask={openTask}
+                    />
+                    <main className="min-w-0 px-4 pt-6 pb-10 sm:px-6 lg:px-7 xl:px-8">
+                        <PageTransition key={location.pathname}>
+                            <Outlet context={context} />
+                        </PageTransition>
+                    </main>
+                </div>
+                <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
+                    <DialogContent className="top-0 left-0 h-dvh w-72 max-w-[85vw] translate-x-0 translate-y-0 rounded-none p-0 transition-transform duration-500 ease-in-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full motion-reduce:transition-none sm:max-w-72">
+                        <DialogTitle className="sr-only">Navigation</DialogTitle>
+                        {sidebar()}
+                    </DialogContent>
+                </Dialog>
+                <ProjectEditor open={projectOpen} onClose={() => setProjectOpen(false)} />
+                <ProjectEditor
+                    open={editingProjectOpen}
+                    project={projects.data?.find((project) => project.id === editingProject)}
+                    onClose={() => setEditingProjectOpen(false)}
+                    onClosed={() => setEditingProject(null)}
+                />
+                <CreateTaskDrawer
+                    open={taskCreate !== null}
+                    projects={projects.data ?? []}
+                    loading={projects.isPending}
+                    error={projects.error}
+                    projectId={taskCreate?.projectId}
+                    dueDate={taskCreate?.dueDate}
+                    onClose={() => setTaskCreate(null)}
+                    onCreateProject={() => setProjectOpen(true)}
+                />
+                <TaskDetailDrawer
+                    open={taskDetailOpen}
+                    task={selected}
+                    projects={projects.data ?? []}
+                    onClose={() => setTaskDetailOpen(false)}
+                    onClosed={() => setSelectedTask(null)}
+                />
+                <SearchDialog
+                    open={searchOpen}
+                    onOpenChange={setSearchOpen}
+                    onOpenTask={(id) => {
+                        setSearchOpen(false);
+                        openTask(id);
+                    }}
+                    onSearchAll={(query) => {
+                        setSearch(query);
+                        setSearchOpen(false);
+                        navigate('/inbox');
+                    }}
+                />
+            </div>
+        </PageTransition>
     );
 }

@@ -5,17 +5,16 @@ import { cn } from '@/lib/utils';
 import Loading from '@/components/loading';
 
 const buttonVariants = cva(
-    'inline-flex items-center justify-center rounded-sm border border-transparent bg-clip-padding text-sm font-medium transition-all outline-none select-none disabled:pointer-events-none disabled:opacity-50',
+    'flow-control inline-flex items-center justify-center rounded-sm border border-transparent bg-clip-padding text-sm font-medium outline-none select-none disabled:pointer-events-none disabled:opacity-50',
     {
         variants: {
             variant: {
-                default: 'bg-primary text-primary-foreground hover:bg-primary/90',
-                outline:
-                    'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
-                ghost: 'hover:bg-accent hover:text-accent-foreground',
-                cancel: 'border border-input bg-background text-muted-foreground hover:bg-accent',
+                default: 'bg-primary text-[#023047]',
+                outline: 'border border-input bg-background',
+                ghost: '',
+                cancel: 'border border-input bg-background',
                 destructive:
-                    'border-destructive bg-white text-destructive hover:bg-destructive hover:text-white',
+                    'border-secondary bg-secondary/10 hover:bg-secondary/20 [&_svg]:text-secondary',
             },
             size: {
                 default: 'h-9 px-4',
@@ -47,7 +46,7 @@ function Button({
     return (
         <ButtonPrimitive
             data-slot="button"
-            className={cn(buttonVariants({ variant, size, className }))}
+            className={cn('text-button-foreground', buttonVariants({ variant, size }), className)}
             disabled={disabled || isPending}
             aria-busy={isPending || undefined}
             {...props}

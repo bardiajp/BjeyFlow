@@ -27,3 +27,25 @@ export const changePasswordSchema = z.object({
 });
 
 export const resetPasswordSchema = changePasswordSchema.pick({ new_password: true });
+
+export const signupIdentitySchema = z.object({
+    username: z
+        .string()
+        .trim()
+        .min(3, 'Use at least 3 characters')
+        .max(150)
+        .regex(/^[\p{L}\p{N}_@.+-]+$/u, 'Use letters, numbers, or @ . + - _'),
+    email: z.string().trim().email('Enter a valid email address').max(254),
+    first_name: z.string().trim().min(1, 'Your first name is required').max(150),
+    last_name: z.string().trim().min(1, 'Your last name is required').max(150),
+    password: z.string().min(8, 'Use at least 8 characters').max(128),
+});
+
+export const signupSchema = signupIdentitySchema.extend({
+    flow_name: z.string().trim().max(60),
+    focus_style: z.enum(['morning_tide', 'night_current', 'steady_tide']),
+    north_star: z.string().trim().max(200),
+    workspace_name: z.string().trim().min(1, 'Give your first project a name').max(150),
+});
+
+export type SignupFormValues = z.infer<typeof signupSchema>;

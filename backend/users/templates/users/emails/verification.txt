@@ -1,0 +1,14 @@
+Welcome to BjeyFlow.
+
+Your verification code is {{ code }}.
+
+Enter it on the sign-up screen to verify your email.
+This code expires in {{ expiry_minutes }} minutes.
+
+Keep this code private. BjeyFlow will never ask you to share it by email or chat.
+
+If you did not request an account, you can safely ignore this email.
+No account will be created without verification.
+
+Less noise. More focus.
+The BjeyFlow team

@@ -1,7 +1,7 @@
 import os
 import secrets
 from datetime import time, timedelta
-from uuid import NAMESPACE_URL, uuid5
+from uuid import NAMESPACE_URL, uuid4, uuid5
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -13,15 +13,72 @@ from core.models import Project, SubTask, Task
 
 
 PROJECTS = (
-    ("website", "Website refresh", "A fresh, thoughtful home for our work.", "#8ECAE6"),
+    (
+        "website",
+        "Website refresh",
+        "A fresh, thoughtful home for our work.",
+        "#8ECAE6",
+        "code",
+    ),
     (
         "product",
         "Product studio",
         "Ideas, feedback, and the next iteration.",
         "#FB8500",
+        "palette",
     ),
-    ("personal", "Personal", "Make room for the things outside work.", "#90BE6D"),
-    ("reading", "Reading list", "A little learning every day.", "#B8A1D9"),
+    (
+        "personal",
+        "Personal",
+        "Make room for the things outside work.",
+        "#90BE6D",
+        "heart",
+    ),
+    ("reading", "Reading list", "A little learning every day.", "#B8A1D9", "book"),
+    (
+        "learning",
+        "Learning lab",
+        "Build a little knowledge every week.",
+        "#023047",
+        "target",
+    ),
+    (
+        "client-work",
+        "Client work",
+        "Deliver thoughtful work for our clients.",
+        "#696969",
+        "briefcase",
+    ),
+    (
+        "notes",
+        "Notes and ideas",
+        "Collect ideas before they slip away.",
+        "#8ECAE6",
+        "folder",
+    ),
+    (
+        "health",
+        "Healthy habits",
+        "Small steps toward a healthier routine.",
+        "#90BE6D",
+        "star",
+    ),
+    (
+        "home",
+        "Home and life",
+        "Keep the everyday things in order.",
+        "#FB8500",
+        "coffee",
+    ),
+    ("music", "Music", "A little time for creative practice.", "#B8A1D9", "music"),
+    ("travel", "Travel plans", "Plan the next little adventure.", "#023047", "rocket"),
+    (
+        "ideas",
+        "Side projects",
+        "Try something new without the pressure.",
+        "#696969",
+        "hash",
+    ),
 )
 
 # New deadlines are relative to the run date. Checklist tuples are (title, done).
@@ -157,7 +214,7 @@ TASKS = (
 
 
 class Command(BaseCommand):
-    help = "Create development demo projects, tasks, and subtasks without overwriting existing data."
+    help = "Create configurable development projects, tasks, and subtasks without overwriting existing data."
     requires_migrations_checks = True
 
     def add_arguments(self, parser):
@@ -165,6 +222,26 @@ class Command(BaseCommand):
             "--username",
             default=os.environ.get("SEED_USERNAME") or "demo",
             help="Demo account username (defaults to SEED_USERNAME or demo).",
+        )
+        parser.add_argument(
+            "--projects",
+            type=int,
+            default=12,
+            help="Number of sample projects (1–100).",
+        )
+        parser.add_argument(
+            "--tasks", type=int, default=120, help="Number of sample tasks (0–10000)."
+        )
+        parser.add_argument(
+            "--subtasks",
+            type=int,
+            default=5,
+            help="Maximum subtasks per new task (0–20).",
+        )
+        parser.add_argument(
+            "--append",
+            action="store_true",
+            help="Add a fresh, separately named sample batch instead of filling the default dataset.",
         )
 
     def handle(self, *args, **options):
@@ -174,13 +251,32 @@ class Command(BaseCommand):
         username = get_user_model().normalize_username(options["username"].strip())
         if not username or len(username) > 150:
             raise CommandError("The seed username must contain 1–150 characters.")
-        result = self.seed(username)
+        limits = (("projects", 1, 100), ("tasks", 0, 10000), ("subtasks", 0, 20))
+        for key, minimum, maximum in limits:
+            if not minimum <= options[key] <= maximum:
+                raise CommandError(f"--{key} must be between {minimum} and {maximum}.")
+        result = self.seed(
+            username,
+            options["projects"],
+            options["tasks"],
+            options["subtasks"],
+            options["append"],
+        )
         self.stdout.write(
             self.style.SUCCESS(
                 f"Seed complete for {username}: created {result['projects']} projects, "
                 f"{result['tasks']} tasks, and {result['subtasks']} subtasks."
             )
         )
+        self.stdout.write(
+            f"Account totals: {result['total_projects']} projects, {result['total_tasks']} tasks, "
+            f"{result['total_subtasks']} subtasks."
+        )
+        self.stdout.write(
+            f"Sign in as {username} to see this data. Use SEED_USERNAME=<your-login> with make seed to target another account."
+        )
+        if result["batch"]:
+            self.stdout.write(f"Fresh sample batch: {result['batch']}")
         if result["user_created"]:
             self.stdout.write(f"Demo login: {username}")
             if result["generated_password"]:
@@ -194,13 +290,21 @@ class Command(BaseCommand):
             self.stdout.write(
                 "Existing account, password, and records were left unchanged."
             )
+        if not options["append"] and not (
+            result["projects"] or result["tasks"] or result["subtasks"]
+        ):
+            self.stdout.write(
+                "The requested sample dataset already exists. Increase the counts or use SEED_ARGS='--append' with make seed for a fresh batch."
+            )
         if result["skipped"]:
             self.stdout.write(
                 f"Skipped {result['skipped']} missing tasks in archived projects."
             )
 
     @transaction.atomic
-    def seed(self, username):
+    def seed(
+        self, username, project_count=12, task_count=120, max_subtasks=5, append=False
+    ):
         User = get_user_model()
         user, created = User.objects.get_or_create(
             username=username,
@@ -227,6 +331,9 @@ class Command(BaseCommand):
             )
 
         namespace = uuid5(NAMESPACE_URL, f"bjeyflow:seed:v1:{user.pk}")
+        batch = uuid4() if append else None
+        if batch:
+            namespace = uuid5(namespace, f"batch:{batch}")
         counts = {
             "projects": 0,
             "tasks": 0,
@@ -234,9 +341,21 @@ class Command(BaseCommand):
             "skipped": 0,
             "user_created": user_created,
             "generated_password": generated_password,
+            "batch": str(batch)[:8] if batch else None,
         }
         projects = {}
-        for position, (key, name, description, color) in enumerate(PROJECTS):
+        archive_after_seed = []
+        for position in range(project_count):
+            if position < len(PROJECTS):
+                key, name, description, color, icon = PROJECTS[position]
+            else:
+                key = f"project-{position}"
+                name = f"Sandbox project {position + 1}"
+                description = "An extra development project for testing larger lists."
+                color = PROJECTS[position % len(PROJECTS)][3]
+                icon = Project.Icon.values[position % len(Project.Icon.values)]
+            if batch:
+                name = f"{name} [seed {str(batch)[:8]}]"
             project, created = Project.objects.get_or_create(
                 pk=uuid5(namespace, f"project:{key}"),
                 defaults={
@@ -244,6 +363,7 @@ class Command(BaseCommand):
                     "name": name,
                     "description": description,
                     "color": color,
+                    "icon": icon,
                     "position": position,
                 },
             )
@@ -253,10 +373,14 @@ class Command(BaseCommand):
                 )
             projects[key] = project
             counts["projects"] += created
+            if created and project_count >= 6 and position == project_count - 1:
+                archive_after_seed.append(project.pk)
 
         today = timezone.localdate()
         now = timezone.now()
-        for position, sample in enumerate(TASKS):
+        for position, sample in enumerate(
+            self.task_samples(list(projects), task_count, max_subtasks)
+        ):
             status = sample.get("status", Task.Status.TODO)
             day = sample["day"]
             project = projects[sample["project"]]
@@ -269,7 +393,10 @@ class Command(BaseCommand):
                 defaults={
                     "project": project,
                     "title": sample["title"],
-                    "description": "Sample task for exploring BjeyFlow. You can edit or delete it.",
+                    "description": sample.get(
+                        "description",
+                        "Sample task for exploring BjeyFlow. You can edit or delete it.",
+                    ),
                     "status": status,
                     "priority": sample.get("priority", Task.Priority.NORMAL),
                     "due_date": (
@@ -278,7 +405,10 @@ class Command(BaseCommand):
                     "due_time": sample.get("time"),
                     "position": position,
                     "completed_at": (
-                        now + timedelta(days=min(day or 0, 0))
+                        now
+                        - timedelta(
+                            days=sample.get("completed_days_ago", max(0, -(day or 0)))
+                        )
                         if status == Task.Status.COMPLETED
                         else None
                     ),
@@ -304,4 +434,96 @@ class Command(BaseCommand):
                         "A seed subtask has a different parent; no data was changed."
                     )
                 counts["subtasks"] += created
+        Project.objects.filter(pk__in=archive_after_seed).update(
+            is_archived=True, updated_at=now
+        )
+        counts["total_projects"] = user.projects.count()
+        counts["total_tasks"] = Task.objects.filter(project__owner=user).count()
+        counts["total_subtasks"] = SubTask.objects.filter(
+            task__project__owner=user
+        ).count()
         return counts
+
+    @staticmethod
+    def task_samples(project_keys, task_count, max_subtasks):
+        verbs = (
+            "Review",
+            "Draft",
+            "Organize",
+            "Plan",
+            "Prepare",
+            "Update",
+            "Check",
+            "Finish",
+        )
+        subjects = (
+            "the next milestone",
+            "the weekly plan",
+            "the first draft",
+            "the project checklist",
+            "the design details",
+            "the meeting notes",
+            "the follow-up",
+            "the research summary",
+        )
+        steps = (
+            "Clarify the goal",
+            "Gather the references",
+            "Prepare a first draft",
+            "Review the details",
+            "Collect feedback",
+            "Make the final changes",
+            "Share the result",
+            "Write a follow-up",
+        )
+        for index in range(task_count):
+            if index < len(TASKS):
+                sample = TASKS[index].copy()
+                if sample["project"] not in project_keys:
+                    sample["project"] = project_keys[index % len(project_keys)]
+                sample["subtasks"] = sample.get("subtasks", ())[:max_subtasks]
+                yield sample
+                continue
+            status = Task.Status.values[(index // 8) % len(Task.Status.values)]
+            bucket = index % 8
+            day = (
+                0,
+                0,
+                1 + index % 7,
+                1 + index % 7,
+                -1 - index % 7,
+                None,
+                8 + index % 21,
+                0,
+            )[bucket]
+            child_count = index % (max_subtasks + 1)
+            completed_children = (
+                child_count
+                if status == Task.Status.COMPLETED
+                else child_count // (2 if status == Task.Status.IN_PROGRESS else 3)
+            )
+            title = f"{verbs[index % len(verbs)]} {subjects[(index // len(verbs)) % len(subjects)]} ({index + 1:03})"
+            if index % 11 == 0:
+                title += " with feedback from the latest project review"
+            yield {
+                "key": f"generated-task:{index}",
+                "project": project_keys[index % len(project_keys)],
+                "title": title,
+                "description": "Development sample for exploring task details.\n\nTry changing its project, deadline, priority, status, or checklist.",
+                "day": day,
+                "time": (
+                    time(9 + index % 10, 30 if index % 2 else 0)
+                    if day is not None and index % 3
+                    else None
+                ),
+                "status": status,
+                "priority": Task.Priority.values[index % len(Task.Priority.values)],
+                "completed_days_ago": index % 7,
+                "subtasks": tuple(
+                    (
+                        f"{steps[step % len(steps)]} ({step + 1})",
+                        step < completed_children,
+                    )
+                    for step in range(child_count)
+                ),
+            }

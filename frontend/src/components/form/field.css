@@ -1,0 +1,24 @@
+.form-field-message {
+    display: grid;
+    grid-template-rows: 1fr;
+    animation: form-field-message-in 200ms ease-out both;
+}
+
+@keyframes form-field-message-in {
+    from {
+        grid-template-rows: 0fr;
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        grid-template-rows: 1fr;
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .form-field-message {
+        animation: none;
+    }
+}

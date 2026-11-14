@@ -1,20 +1,22 @@
 import { useMutation } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
+import { Shield, ShieldCheck, UserRound } from 'lucide-react';
 import { createPanelUser, updatePanelUser } from '../api/panel-users';
 import { createUserSchema, userSchema } from '../schema';
 import type { PanelUser, UpdatePanelUser } from '../types';
 import DisplayError from '@/components/display-error';
 import { LabeledInput } from '@/components/form/labeled';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/toast';
 import { DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+import { LabeledSelect } from '@/components/form/labeled-select';
 import useInvalidateUsers from './use-invalidate-users';
 
 type Values = UpdatePanelUser & { password: string };
 
 export default function UserForm({ user, onClose }: { user?: PanelUser; onClose: () => void }) {
     const invalidate = useInvalidateUsers();
-    const { register, handleSubmit } = useForm<Values>({
+    const { register, control, handleSubmit } = useForm<Values>({
         defaultValues: {
             username: user?.username ?? '',
             display_name: user?.display_name ?? '',
@@ -30,7 +32,12 @@ export default function UserForm({ user, onClose }: { user?: PanelUser; onClose:
             user
                 ? updatePanelUser(user.id, userSchema.parse(values))
                 : createPanelUser(createUserSchema.parse(values)),
-        onSuccess: async () => {
+        onSuccess: async (_, values) => {
+            toast.add({
+                type: user ? 'info' : 'success',
+                title: user ? 'User updated' : 'User created successfully',
+                description: `The account for “${values.username}” has been ${user ? 'updated' : 'created'} successfully.`,
+            });
             await invalidate();
             onClose();
         },
@@ -51,18 +58,27 @@ export default function UserForm({ user, onClose }: { user?: PanelUser; onClose:
                     <LabeledInput label="Last name" {...register('last_name')} maxLength={150} />
                 </div>
                 <LabeledInput label="Mobile" type="tel" {...register('mobile')} maxLength={32} />
-                <div className="grid gap-2">
-                    <Label htmlFor="user-role">Role</Label>
-                    <select
-                        id="user-role"
-                        className="border-input bg-background h-9 rounded-md border px-3"
-                        {...register('role')}
-                    >
-                        <option value="user">User</option>
-                        <option value="staff">Staff</option>
-                        <option value="superuser">System administrator</option>
-                    </select>
-                </div>
+                <Controller
+                    name="role"
+                    control={control}
+                    render={({ field: { onChange, ...field } }) => (
+                        <LabeledSelect
+                            {...field}
+                            onValueChange={onChange}
+                            label="Role"
+                            disabled={mutation.isPending}
+                            options={[
+                                { value: 'user', label: 'User', icon: <UserRound size={16} /> },
+                                { value: 'staff', label: 'Staff', icon: <Shield size={16} /> },
+                                {
+                                    value: 'superuser',
+                                    label: 'System administrator',
+                                    icon: <ShieldCheck size={16} />,
+                                },
+                            ]}
+                        />
+                    )}
+                />
                 {!user && (
                     <LabeledInput
                         label="Password"

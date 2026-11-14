@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { logout } from '../api/logout';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/toast';
 import DisplayError from '@/components/display-error';
 import useUserStore from '@/store/use-user-store';
 
@@ -10,6 +11,11 @@ export default function Logout() {
     const mutation = useMutation({
         mutationFn: logout,
         onSuccess: () => {
+            toast.add({
+                type: 'success',
+                title: 'Signed out',
+                description: 'You have signed out of your account.',
+            });
             queryClient.clear();
             clearUser();
         },

@@ -9,6 +9,8 @@ from core.models import Task
 from core.permissions import IsProjectOwner
 from core.serializers.task import TaskCreateSerializer, TaskSerializer
 from core.services.task import task_service
+from core.services.reorder import reorder_tasks
+from core.serializers.reorder import TaskReorderSerializer
 
 
 class TaskViewSet(ModelViewSet):
@@ -41,6 +43,8 @@ class TaskViewSet(ModelViewSet):
         )
 
     def get_serializer_class(self):
+        if self.action == "reorder":
+            return TaskReorderSerializer
         return TaskCreateSerializer if self.action == "create" else TaskSerializer
 
     def _change_status(self, status):
@@ -56,3 +60,10 @@ class TaskViewSet(ModelViewSet):
     @action(detail=True, methods=["post"])
     def reopen(self, request, *args, **kwargs):
         return self._change_status(Task.Status.TODO)
+
+    @action(detail=False, methods=["post"])
+    def reorder(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reorder_tasks(request.user, serializer.validated_data["items"])
+        return Response({"detail": "Board order saved."})

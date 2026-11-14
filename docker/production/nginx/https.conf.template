@@ -1,0 +1,85 @@
+limit_req_zone $binary_remote_addr zone=auth:10m rate=10r/m;
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name ${APP_DOMAIN} ${MAIL_HOST};
+    server_tokens off;
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type text/plain;
+    }
+    location = /healthz {
+        access_log off;
+        return 200 'ok';
+    }
+    location / {
+        return 301 https://${APP_DOMAIN}$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
+    http2 on;
+    server_name ${APP_DOMAIN};
+    server_tokens off;
+    ssl_certificate /etc/letsencrypt/live/${APP_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${APP_DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:TLS:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+    client_max_body_size 2m;
+    root /usr/share/nginx/html;
+    index index.html;
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+    add_header Strict-Transport-Security 'max-age=31536000' always;
+    add_header Permissions-Policy 'camera=(), microphone=(), geolocation=()' always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
+    location = /healthz/ {
+        access_log off;
+        include /etc/nginx/snippets/api-proxy.conf;
+    }
+    location ~ ^/users/auth/(login|signup(?:/verify|/resend)?)/$ {
+        limit_req zone=auth burst=10 nodelay;
+        limit_req_status 429;
+        include /etc/nginx/snippets/api-proxy.conf;
+    }
+    location /users/ {
+        include /etc/nginx/snippets/api-proxy.conf;
+    }
+    location /api/ {
+        include /etc/nginx/snippets/api-proxy.conf;
+    }
+    location /static/ {
+        include /etc/nginx/snippets/api-proxy.conf;
+    }
+    location ^~ /assets/ {
+        try_files $uri =404;
+        expires 1y;
+    }
+    location = /index.html {
+        expires -1;
+    }
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name ${MAIL_HOST};
+    ssl_certificate /etc/letsencrypt/live/${APP_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${APP_DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    return 301 https://${APP_DOMAIN}$request_uri;
+}

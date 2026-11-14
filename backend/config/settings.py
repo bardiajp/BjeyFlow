@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from ipaddress import ip_address
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 env = environ.Env(
     DEBUG=(bool, False),
@@ -20,6 +22,17 @@ SECRET_KEY = env("DJANGO_SECRET_KEY", default="unsafe-development-key-change-me"
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
+if not DEBUG and SECRET_KEY == "unsafe-development-key-change-me":
+    raise ImproperlyConfigured("Set DJANGO_SECRET_KEY before starting production.")
+
+TRUST_PROXY = env.bool("TRUST_PROXY", default=False)
+if TRUST_PROXY:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=not DEBUG)
+SECURE_REDIRECT_EXEMPT = [r"^healthz/$"]
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 
 TIME_ZONE = "Asia/Tehran"
 LANGUAGE_CODE = "en"
@@ -91,6 +104,8 @@ DATABASES = {
         "PASSWORD": env("POSTGRES_PASSWORD", default=""),
         "HOST": env("POSTGRES_HOST", default=""),
         "PORT": env("POSTGRES_PORT", default=""),
+        "CONN_MAX_AGE": 60,
+        "CONN_HEALTH_CHECKS": True,
     }
 }
 
@@ -99,18 +114,19 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage" if DEBUG else "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
-]
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:5174", "http://127.0.0.1:5174"])
 CORS_ALLOW_CREDENTIALS = True
+
+REDIS_URL = env("REDIS_URL", default="")
+if REDIS_URL:
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": REDIS_URL}}
 
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
@@ -142,11 +158,58 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
 
 AUTH_USER_MODEL = "users.User"
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
 
 JWT_SECRET_KEY = env("JWT_SECRET_KEY", default=SECRET_KEY)
 JWT_ACCESS_TOKEN_LIFETIME_SECONDS = env("JWT_ACCESS_TOKEN_LIFETIME_SECONDS")
+WEATHER_TRUSTED_PROXIES = env.list("WEATHER_TRUSTED_PROXIES", default=[])
+WEATHER_DEV_IP = env("WEATHER_DEV_IP", default="").strip() if DEBUG else ""
+if WEATHER_DEV_IP:
+    try:
+        address = ip_address(WEATHER_DEV_IP)
+        address = getattr(address, "ipv4_mapped", None) or address
+        if not address.is_global:
+            raise ValueError("A public IP is required")
+        WEATHER_DEV_IP = str(address)
+    except ValueError as exc:
+        raise ImproperlyConfigured(
+            "WEATHER_DEV_IP must be a valid public IP address."
+        ) from exc
+WEATHER_CACHE_SECONDS = 600
+WEATHER_REQUEST_TIMEOUT = 4
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {
+    "weather": "30/min",
+    "signup_burst": "5/min",
+    "signup_hourly": "20/hour",
+    "signup_verify": "30/min",
+}
 JWT_COOKIE_NAME = "bf_access"
 JWT_COOKIE_SECURE = not DEBUG
+
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.console.EmailBackend"
+    if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend",
+)
+EMAIL_HOST = env("EMAIL_HOST", default="localhost")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)
+EMAIL_TIMEOUT = 10
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="BjeyFlow <noreply@localhost>")
+SIGNUP_CODE_LIFETIME_SECONDS = 600
+SIGNUP_RESEND_SECONDS = 60
+SIGNUP_MAX_ATTEMPTS = 5
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(seconds=JWT_ACCESS_TOKEN_LIFETIME_SECONDS),

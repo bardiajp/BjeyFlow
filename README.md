@@ -4,6 +4,9 @@
 
 ## Stack
 
+Production Docker/Nginx/TLS/mail deployment is documented in
+[`docker/production/README.md`](docker/production/README.md).
+
 - Python 3.11+, Django 5.2, DRF, simplejwt (JWT auth with httponly cookies)
 - React 19, Vite, TypeScript, Tailwind CSS 4, shadcn UI
 - PostgreSQL
@@ -39,6 +42,9 @@ frontend/
 | URL | Description |
 |-----|-------------|
 | `POST /users/auth/login/` | JWT login (sets httponly cookie) |
+| `POST /users/auth/signup/` | Start public registration and send an email code |
+| `POST /users/auth/signup/verify/` | Verify the code, create the account/project, and sign in |
+| `POST /users/auth/signup/resend/` | Send a replacement verification code |
 | `POST /users/auth/logout/` | JWT logout (clears cookie) |
 | `GET /users/auth/me/` | Current user |
 | `POST /users/auth/change-password/` | Change your own password |
@@ -53,8 +59,73 @@ frontend/
 | `GET, PUT, PATCH, DELETE /api/tasks/<id>/` | Manage your task |
 | `POST /api/tasks/<id>/complete/` | Complete a task (idempotent) |
 | `POST /api/tasks/<id>/reopen/` | Reopen a task as To do |
+| `POST /api/tasks/reorder/` | Atomically save board order and status changes |
 | `GET, POST /api/tasks/<task_id>/subtasks/` | List/create checklist items |
 | `GET, PUT, PATCH, DELETE /api/tasks/<task_id>/subtasks/<id>/` | Manage a checklist item |
+| `POST /api/tasks/<task_id>/subtasks/reorder/` | Atomically reorder a task's complete checklist |
+| `GET /api/weather/` | Public, rate-limited IP-localized weather and day/night state |
+
+### Sign up and email verification
+
+Open `/signup` from the Sign up card on the login page. Registration collects
+username, email, first/last name, and password, followed by optional flow name,
+focus rhythm, a north-star goal, and the first project's name. The final step
+supports pasting or autofilling one six-digit code and verifies automatically.
+
+No user account is created before verification. Pending passwords and codes are
+hashed. Codes expire after 10 minutes, allow five failed attempts, and can be
+replaced after 60 seconds. Replacements invalidate the previous code. Verified
+emails are unique case-insensitively; existing administrator-created accounts
+can keep an empty email. Public signup never grants staff or administrator access.
+
+With `DEBUG=True`, email defaults to Django's console backend. Read the newest
+message with `docker compose logs backend`; codes are never returned by the API.
+For real delivery, configure `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`,
+`EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `EMAIL_USE_SSL`, and `DEFAULT_FROM_EMAIL`.
+With `DEBUG=False`, the default backend is SMTP. To try SMTP locally, explicitly
+set `EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`. Use TLS on port
+587 or SSL on port 465, not both. Recreate the backend container after changing
+its environment. Run `docker compose exec backend python manage.py migrate`
+when deploying the new user fields and verification table.
+
+Registration/resends are additionally limited to five requests/minute and twenty
+requests/hour per socket IP; verification is limited to thirty requests/minute.
+These DRF limits use Django's cache: configure a shared cache for multi-worker
+deployments. Behind a proxy, socket-IP limits apply to the proxy rather than
+trusting arbitrary forwarded headers. Expired challenges are cleaned up on new
+registration requests. Successful verification creates a normal user and their
+first project atomically, then sets the same HTTP-only login cookie as Sign in.
+
+### Local weather icons
+
+`core.utils.get_ip(request)` validates the socket IP. Forwarded IPs are used only
+when the immediate peer matches `WEATHER_TRUSTED_PROXIES` (comma-separated proxy
+IPs/CIDRs). The chain is checked right-to-left. Configure the proxy to overwrite
+or safely append the client IP; do not trust arbitrary client-supplied headers.
+
+The weather endpoint sends the visitor's **public IP** to `https://ipwho.is` for
+approximate coordinates and an IANA timezone, then sends coordinates to wttr.in
+through `python-weather`. Location, not timezone alone, determines weather.
+Geolocation is cached for 24 hours; forecasts for 10 minutes. Day/night is
+recomputed in that timezone using the forecast's sunrise/sunset. Cache keys do
+not contain raw IPs, and responses never expose the visitor's IP or coordinates.
+The default Django cache is process-local; configure a shared cache for multiple
+workers if needed. No API key is required.
+
+The endpoint also works before login and is limited to 30 requests/minute per IP.
+For local/Docker development, set `WEATHER_DEV_IP=<your-public-ip>` in `.env`
+with `DEBUG=True`, then recreate the backend with
+`docker compose up -d --no-deps --force-recreate backend` (or restart the local
+Django process). This overrides only private/local request IPs, never actual
+public visitor IPs or the rate-limit identity. The override is completely ignored
+when `DEBUG=False`; invalid or private override IPs are rejected in development.
+
+Without the override, private/loopback IPs are not sent to external services: local development shows
+a browser-local sun/moon fallback, as do provider failures. It does **not**
+pretend the backend's public IP is the visitor's location. The shared frontend
+`WeatherIcon` replaces the former sun icons and refreshes every five minutes.
+Rain, drizzle, snow, sleet, clouds, fog, wind, and storm/hazard icons take priority
+over clear day/night symbols, so night rain still shows rain.
 
 ## Projects, tasks, and subtasks
 
@@ -90,7 +161,11 @@ Content-Type: application/json
 
 Statuses: `todo`, `in_progress`, `completed`. Priorities: `low`, `normal`,
 `high`, `urgent`. New tasks default to `todo`/`normal`; initial checklist items
-start unchecked. Due dates and times are optional, but a time requires a date.
+default to unchecked and accept optional `is_completed` flags. Create Task and
+Task Details share the same checklist UI (Enter/+ to add, check, drag to reorder,
+and delete). In Create Task, the draft checklist is saved atomically with the
+task, including its order and completion flags. Due dates and times are optional,
+but a time requires a date.
 Dates are calendar dates; times carry no timezone and should be interpreted in
 the application's configured timezone. Completion timestamps are timezone-aware
 and managed by the server on both status updates and completion/reopen actions.
@@ -132,7 +207,57 @@ projects cannot receive new or moved tasks, but existing tasks remain editable.
 Deleting a task deletes its checklist. Account deletion is also blocked while
 the account owns projects containing protected tasks.
 
+### Drag-and-drop and project icons
+
+The task-detail checklist and board support pointer/touch dragging using grip
+handles, plus keyboard dragging (Space to pick up, arrow keys to move, Space to
+drop, Escape to cancel). Changes persist to the backend; failed requests roll
+back the optimistic ordering and show `DisplayError`. Board mode uses manual
+position ordering rather than date/title sorting.
+
+For checklist reordering, post `{"ids": ["<subtask-uuid>", "<subtask-uuid>"]}`
+to the nested reorder endpoint. Include every current child exactly once. The
+server checks parent ownership and assigns consecutive positions atomically.
+
+For board changes, post `{"items": [{"id": "<task-uuid>", "status": "todo",
+"position": 0}]}` to `/api/tasks/reorder/`. Only included, owned tasks are
+updated; hidden tasks in a filtered board are not modified. Moving cards into
+or out of Completed maintains `completed_at`. Duplicate IDs, negative positions,
+duplicate positions within a status, and inaccessible tasks are rejected.
+
+Projects have a validated `icon` key: `hash`, `folder`, `briefcase`, `code`,
+`book`, `heart`, `star`, `target`, `palette`, `coffee`, `music`, or `rocket`.
+Choose it when creating a project, or use the sidebar's edit-project button to
+change it later. `PATCH /api/projects/<id>/` persists the icon and project color;
+task responses include `project_icon`. Existing projects default to `hash`.
+
+Theme colors remain primary `#8ECAE6` and secondary `#FB8500`; muted text uses
+`#696969`. Shared action-button labels use the `button-foreground` token,
+`#023047`, including hover states.
+
 ## Feature structure (DVocean pattern)
+
+### Task landing page
+
+After signing in, all users land on `/today`. The shared application shell
+provides the project sidebar, search (`Ctrl/Cmd+K`), add-task action (`N`), task
+reminders, account settings, and mobile navigation. Routes are `/inbox`,
+`/today`, `/upcoming`, `/completed`, and `/projects/<uuid>`. Administrator-only
+account management remains at `/settings/users`.
+
+The `app/tasks/` and `app/projects/` features separate typed API calls, request
+schemas, hooks, and reusable components. Task views send their date, project,
+status, priority, search, and ordering parameters to the backend. Today uses
+`due_date`; Upcoming requests tomorrow through seven days from today. Inbox
+includes completed and undated tasks. Sidebar counts and weekly activity use
+the signed-in user's paginated task data, cached by React Query.
+
+The page supports list/board views, creating projects and tasks with subtasks,
+editing tasks, completing/reopening tasks, updating checklists, and deleting
+tasks. Schedule entries come from actual task due times, not calendar events.
+The 25-minute focus timer is browser-local and resets when its page unmounts;
+there is no focus-session persistence, Google Calendar integration, or push
+notification service. No workspaces or fabricated comments/files are shown.
 
 Each frontend entity or feature lives under `src/app/<feature>/`:
 
@@ -227,12 +352,25 @@ Docker backend image. It starts PostgreSQL if needed and does not rebuild images
 or automatically seed on every application startup. For a native setup, use
 `make seed-local` or `.venv/bin/python backend/manage.py seed`.
 
-Seeding requires `DEBUG=True`. It creates a regular account named `demo`, four
-projects, sixteen tasks, and twelve checklist items. The initial data includes
-eight tasks due today (six unfinished and two completed), upcoming and overdue
-tasks, an undated task, and all task priorities. New sample tasks are dated
-relative to the run date; existing dates are preserved. Sign in as the seed
-account to see its data—other users' project lists remain separate.
+Seeding requires `DEBUG=True`. By default it fills a sample dataset of **12
+projects and 120 tasks**, with up to **5 subtasks per task**, under the `demo`
+account. Data covers all task statuses/priorities, partial and complete
+checklists, Today, near-future and distant deadlines, overdue and undated tasks,
+different project icons/colors, long titles, and one archived project. There
+are enough tasks to exercise backend pagination and frontend filtering/boards.
+New sample tasks are dated relative to the run date; existing dates are preserved.
+
+```bash
+make seed                                        # Default dataset for demo
+make seed SEED_USERNAME=alex                      # Use your existing login
+make seed SEED_PROJECTS=20 SEED_TASKS=300 SEED_SUBTASKS=8
+make seed SEED_USERNAME=alex SEED_ARGS="--append"  # Add a fresh, separate batch
+make seed-local SEED_USERNAME=alex                # Same options without Docker
+```
+
+**Sign in as the selected seed account to see the data.** If you are logged in
+as another user, that user's lists stay separate. Existing account passwords and
+roles are never changed. The command prints the target account and actual totals.
 
 The first run prints a generated demo password. To choose credentials instead,
 set `SEED_USERNAME` and `SEED_PASSWORD` in your local `.env` before running the
@@ -240,11 +378,19 @@ command; passwords must have at least eight characters. For a local command,
 `--username` can override the username. Seed accounts are not administrators;
 use `make superuser` separately when needed.
 
-Repeated runs use stable UUIDs to avoid duplicates and preserve existing edits,
+Default reruns use stable UUIDs to avoid duplicates and preserve existing edits,
 completion state, due dates, account details, and passwords. An existing account
 with the selected username is never promoted or given a new password. Missing
-sample records are recreated; this is not a reset or cleanup command. Only use
-seed credentials and data for local development.
+sample records are recreated unless their project was archived; this is not a
+reset or cleanup command. Lowering counts does not delete records. Increasing
+counts expands the default dataset. `--append` creates a fresh batch with new
+UUIDs, dated relative to today, and a batch suffix on project names; use it when
+you want more data or a new set of current deadlines. Only newly created sample
+projects may be automatically archived; existing archive settings are preserved.
+
+Management-command options are `--username`, `--projects`, `--tasks`,
+`--subtasks`, and `--append`. Limits are 1–100 projects, 0–10000 tasks, and 0–20
+subtasks per new task. Only use seed credentials and data for local development.
 
 ## Git
 

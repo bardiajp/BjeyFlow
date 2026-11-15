@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-cd /opt/bjeyflow
+cd "$(dirname "$0")/../.."
 exec 9>/run/lock/bjeyflow-deploy.lock
 flock -w 1200 9
 sh docker/production/backup-database.sh

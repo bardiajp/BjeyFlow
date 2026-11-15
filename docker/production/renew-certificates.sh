@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-cd /opt/bjeyflow
+cd "$(dirname "$0")/../.."
 set -a
 . ./.env.production
 set +a

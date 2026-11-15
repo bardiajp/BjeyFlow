@@ -4,6 +4,7 @@
 
 `.github/workflows/production.yml` checks pull requests to `main` and deploys
 every push to `main` after both production Docker images build successfully.
+CI checks migration files and applies migrations to a temporary PostgreSQL database.
 Manual runs deploy only when `main` is selected. No test suite is added.
 
 Create these GitHub Actions secrets in the repository (or its `production`
@@ -31,11 +32,12 @@ serializes deployments, backs up PostgreSQL, synchronizes source without
 touching `.env.production` or `deploy-data`, and builds images before replacing
 the backend and Nginx. Only application containers are updated; database, Redis,
 and mail infrastructure changes require a deliberate manual operation.
-Migrations run at backend startup. There can be a short interruption during
+Migrations run at backend startup; deployment also checks that none remain pending.
+There can be a short interruption during
 replacement; this is not a zero-downtime deployment. Failed migrations or
 health checks fail the workflow; no automatic schema rollback is attempted.
 Inspect Actions logs and server logs before retrying. A completed release SHA
-is recorded in `/opt/bjeyflow/deploy-data/deployed-commit`.
+is recorded in `/root/BjeyFlow/deploy-data/deployed-commit`.
 
 Backups and old images are not automatically pruned. Monitor disk usage and
 copy backups off-server. Do not run `docker system prune -a` indiscriminately.
@@ -106,13 +108,13 @@ Nginx with the Vite production build, non-root Gunicorn (two workers/two threads
 PostgreSQL 18, a shared Redis cache, and Docker Mailserver 17. Database and Redis
 ports are not published. TLS is shared by HTTPS and authenticated SMTP/IMAP.
 
-Use `/opt/bjeyflow` on the server. Keep `.env.production` readable only by root;
+Use `/root/BjeyFlow` on the server. Keep `.env.production` readable only by root;
 generate independent random Django/JWT/database/mail secrets instead of using
 the example values. Never upload a development `.env` or production data into a
 Docker build context. `deploy-data/` contains private mail keys, mailboxes,
 certificates and backups and is deliberately ignored by Git and Docker builds.
 
-All commands below run from `/opt/bjeyflow`:
+All commands below run from `/root/BjeyFlow`:
 
 ```sh
 docker compose --env-file .env.production -f compose.production.yml build

@@ -108,6 +108,28 @@ services:
     mem_limit: 128m
     logging: *logging
 
+  push-worker:
+    image: bjeyflow/backend:${RELEASE_TAG:-production}
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      REDIS_URL: redis://cache:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["while :; do python manage.py send_push_reminders; sleep 60; done"]
+    networks: [app]
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    logging: *logging
+
   mailserver:
     image: ghcr.io/docker-mailserver/docker-mailserver:17.0.0
     hostname: ${MAIL_HOST:?required}

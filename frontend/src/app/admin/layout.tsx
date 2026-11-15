@@ -1,5 +1,6 @@
 import {
     Activity,
+    BellRing,
     ChartNoAxesCombined,
     CircleAlert,
     FileCode2,
@@ -23,6 +24,7 @@ const tabs = [
     { to: '/admin/services', label: 'Services', icon: Server },
     { to: '/admin/emails', label: 'Email', icon: Mail },
     { to: '/admin/email-templates', label: 'Email templates', icon: FileCode2 },
+    { to: '/admin/notification-templates', label: 'Notification templates', icon: BellRing },
     { to: '/admin/errors', label: 'Errors', icon: CircleAlert },
     { to: '/admin/settings', label: 'Settings', icon: Settings2 },
 ];

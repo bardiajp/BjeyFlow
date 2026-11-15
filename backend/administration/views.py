@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 from core.models import Project, Task
 from users.models import User
 from users.permissions import HasAccountableRole, IsSystemAdministrator
+from users.services.push import TEMPLATES
 from .audit import record_event
 from .health import service_status
 from .models import AuditEvent, EmailEvent, SiteSettings, SystemEvent
@@ -34,6 +35,13 @@ class PublicSettingsView(generics.RetrieveAPIView):
 
     def get_object(self):
         return SiteSettings.load()
+
+
+class PushTemplatesView(APIView):
+    permission_classes = [HasAccountableRole]
+
+    def get(self, request):
+        return Response([{"id": key, **value} for key, value in TEMPLATES.items()])
 
 
 class OverviewView(APIView):

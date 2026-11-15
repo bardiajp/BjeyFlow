@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Bell } from 'lucide-react';
 import { usePreferences } from '@/store/use-preferences';
 import { PreferenceToggle } from './preference-toggle';
@@ -6,68 +5,96 @@ import { LabeledSelect } from '@/components/form/labeled-select';
 import { LabeledInput } from '@/components/form/labeled';
 import { Button } from '@/components/ui/button';
 import DisplayError from '@/components/display-error';
+import { usePushNotifications } from '@/hooks/use-push-notifications';
 
 export function NotificationSettings() {
     const preferences = usePreferences();
-    const [permission, setPermission] = useState(() =>
-        'Notification' in window ? Notification.permission : 'unsupported'
-    );
-    const [error, setError] = useState<unknown>(null);
-    const supported = 'Notification' in window && window.isSecureContext;
-    const enable = async () => {
-        setError(null);
-        try {
-            const result = await Notification.requestPermission();
-            setPermission(result);
-            if (result === 'granted') preferences.setPreference('browserNotifications', true);
-            else
-                setError(
-                    new Error(
-                        'Notifications were not enabled. Allow them in your browser’s site settings to continue.'
-                    )
-                );
-        } catch {
-            setError(
-                new Error(
-                    'This browser could not enable notifications. In-app reminders are still available.'
-                )
-            );
-        }
-    };
+    const push = usePushNotifications();
     return (
-        <section className="border-input bg-card rounded-[22px] border p-5 sm:p-6">
+        <section
+            id="notifications"
+            className="border-input bg-card scroll-mt-32 rounded-[22px] border p-5 sm:p-6"
+        >
             <h2 className="text-foreground mb-2 flex items-center gap-2 text-sm font-semibold">
                 <Bell size={16} />
                 Gentle reminders
             </h2>
             <p className="text-muted-foreground text-[11px] leading-relaxed">
-                Browser reminders work while BjeyFlow is open. Background tabs may be delayed by
-                your browser. Tasks without a time are due at 09:00 in your selected time zone.
+                Task reminders can reach this device even when BjeyFlow is closed. Tasks without a
+                time are due at 09:00 in your selected time zone. On iPhone, install BjeyFlow to the
+                Home Screen first. Delivery depends on device and network settings.
             </p>
             <PreferenceToggle
-                label="Browser notifications"
-                description={
-                    !supported
-                        ? 'Not supported here. Use a compatible browser over HTTPS.'
-                        : permission === 'granted'
-                          ? 'Permission granted on this device.'
-                          : 'Permission must be granted separately on each device.'
-                }
-                checked={preferences.browserNotifications && permission === 'granted'}
-                disabled={!supported || permission !== 'granted'}
+                label="Task reminders"
+                description="Pause or resume reminders across your account. Device permissions are managed separately."
+                checked={preferences.browserNotifications}
+                disabled={!push.enabled}
                 onChange={(value) => preferences.setPreference('browserNotifications', value)}
             />
-            {supported && permission !== 'granted' && (
+            {!push.enabled ? (
                 <Button
                     type="button"
-                    variant="outline"
-                    className="mb-4 h-9 rounded-xl text-xs"
-                    onClick={() => void enable()}
+                    className="bg-brand mb-4 h-11 w-full rounded-xl text-xs text-white"
+                    disabled={
+                        !push.supported || push.config.isPending || !push.config.data?.configured
+                    }
+                    isPending={push.enable.isPending}
+                    onClick={() => push.enable.mutate()}
                 >
                     Enable on this device
                 </Button>
+            ) : (
+                <div className="mb-4 flex flex-wrap gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 rounded-xl text-xs"
+                        isPending={push.sendTest.isPending}
+                        onClick={() => push.sendTest.mutate()}
+                    >
+                        Send a test notification
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 rounded-xl text-xs"
+                        isPending={push.disable.isPending}
+                        onClick={() => push.disable.mutate()}
+                    >
+                        Turn off on this device
+                    </Button>
+                </div>
             )}
-            <DisplayError error={error} />
+            {!push.supported && (
+                <p className="text-muted-foreground mb-3 text-xs">
+                    Use a supported browser over HTTPS. On iPhone, add BjeyFlow to your Home Screen
+                    first.
+                </p>
+            )}
+            {push.supported && push.config.isSuccess && !push.config.data.configured && (
+                <p className="text-muted-foreground mb-3 text-xs">
+                    The server has not configured push notifications yet.
+                </p>
+            )}
+            {push.permission === 'denied' && (
+                <p className="text-destructive mb-3 text-xs">
+                    Notifications are blocked in your device settings.
+                </p>
+            )}
+            {push.sendTest.isSuccess && (
+                <p className="text-muted-foreground mb-3 text-xs">
+                    Test accepted by the push service; delivery depends on your device.
+                </p>
+            )}
+            <DisplayError
+                error={
+                    push.config.error ||
+                    push.devices.error ||
+                    push.enable.error ||
+                    push.disable.error ||
+                    push.sendTest.error
+                }
+            />
             <LabeledSelect
                 label="Remind me"
                 value={String(preferences.reminderMinutes)}

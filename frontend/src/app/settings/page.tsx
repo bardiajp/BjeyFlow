@@ -15,7 +15,8 @@ import {
     UserRound,
     Waves,
 } from 'lucide-react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
+import { useEffect } from 'react';
 import { AccentTitle } from '@/components/accent-title';
 import ChangePassword from '@/app/users/components/change-password';
 import { LabeledSelect } from '@/components/form/labeled-select';
@@ -35,6 +36,11 @@ export default function SettingsPage() {
     const preferences = usePreferences();
     const { setPreference } = preferences;
     const name = user?.display_name || user?.username || 'Your account';
+    const location = useLocation();
+    useEffect(() => {
+        if (location.hash === '#notifications')
+            document.getElementById('notifications')?.scrollIntoView();
+    }, [location.hash]);
     return (
         <div className="flex min-h-full w-full min-w-0 flex-1 flex-col gap-4 sm:gap-6">
             <header className="surface-wash border-input relative overflow-hidden rounded-2xl border p-4 sm:rounded-[24px] sm:p-6">

@@ -1,4 +1,4 @@
-import { ChevronRight, PanelLeft, Plus } from 'lucide-react';
+import { BellRing, ChevronRight, PanelLeft, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { Fragment, type RefObject } from 'react';
 import { Button } from '@/components/ui/button';
@@ -92,6 +92,14 @@ export function AppHeader({
                     />
                 </div>
                 <RemindersDropdown tasks={tasks} today={today} onOpenTask={onOpenTask} />
+                <Link
+                    to="/settings#notifications"
+                    aria-label="Notification settings"
+                    title="Notification settings"
+                    className="border-input bg-card text-primary-foreground flex size-11 shrink-0 items-center justify-center rounded-xl border"
+                >
+                    <BellRing size={18} />
+                </Link>
                 <HelpPopover open={helpOpen} onOpenChange={onHelpOpenChange} />
                 <span
                     aria-hidden="true"

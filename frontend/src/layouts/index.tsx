@@ -13,7 +13,6 @@ import { AppSidebar } from './sidebar';
 import { PageTransition } from '@/components/page-transition';
 import { SearchDialog } from './search-dialog';
 import { useSiteSettings } from '@/hooks/use-site-settings';
-import { useTaskNotifications } from '@/hooks/use-task-notifications';
 import { usePreferences } from '@/store/use-preferences';
 
 export default function Layout() {
@@ -42,9 +41,26 @@ export default function Layout() {
     const [helpOpen, setHelpOpen] = useState(false);
     const searchRef = useRef<HTMLInputElement>(null);
     const selected = tasks.data?.find((task) => task.id === selectedTask);
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const taskId = params.get('task');
+        if (!taskId || !tasks.isSuccess) return;
+        if (tasks.data.some((task) => task.id === taskId)) {
+            setSelectedTask(taskId);
+            setTaskDetailOpen(true);
+        }
+        params.delete('task');
+        navigate(
+            {
+                pathname: location.pathname,
+                search: params.toString() ? `?${params}` : '',
+                hash: location.hash,
+            },
+            { replace: true }
+        );
+    }, [location.search, location.pathname, location.hash, tasks.isSuccess, tasks.data, navigate]);
     usePreferences((state) => state.calendar);
     usePreferences((state) => state.hourCycle);
-    useTaskNotifications(tasks.data ?? [], openTask);
     const createTask = (projectId?: string) =>
         setTaskCreate({
             projectId: projectId ?? projectRoute?.params.projectId,
@@ -64,6 +80,7 @@ export default function Layout() {
         '/admin/services': 'Services',
         '/admin/emails': 'Email',
         '/admin/email-templates': 'Email templates',
+        '/admin/notification-templates': 'Notification templates',
         '/admin/errors': 'Errors',
         '/admin/settings': 'Workspace settings',
     };
@@ -186,7 +203,7 @@ export default function Layout() {
                     </main>
                 </div>
                 <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
-                    <DialogContent className="top-0 left-0 block h-dvh max-h-dvh w-72 max-w-[85vw] translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none p-0 transition-transform duration-500 ease-in-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full motion-reduce:transition-none sm:max-w-72">
+                    <DialogContent className="top-0 left-0 block h-dvh max-h-dvh w-72 max-w-[85vw] translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none rounded-tr-[24px] rounded-br-[24px] p-0 transition-transform duration-500 ease-in-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full motion-reduce:transition-none sm:max-w-72">
                         <DialogTitle className="sr-only">Navigation</DialogTitle>
                         {sidebar()}
                     </DialogContent>

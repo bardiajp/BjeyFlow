@@ -4,6 +4,7 @@ from rest_framework.routers import SimpleRouter
 from users.views.auth import ChangePasswordView, LoginView, LogoutView, MeView
 from users.views.management import UserManagementViewSet
 from users.views.settings import PreferencesView, ProfileView, SessionsView
+from users.views.push import PushConfigView, PushSubscriptionsView, PushTestView
 from users.views.signup import SignupResendView, SignupVerifyView, SignupView
 from users.views.password_reset import (
     PasswordResetRequestView,
@@ -14,6 +15,13 @@ router = SimpleRouter()
 router.register(r"", UserManagementViewSet, basename="users")
 
 urlpatterns = [
+    path("auth/push/config/", PushConfigView.as_view(), name="push-config"),
+    path(
+        "auth/push/subscriptions/",
+        PushSubscriptionsView.as_view(),
+        name="push-subscriptions",
+    ),
+    path("auth/push/test/", PushTestView.as_view(), name="push-test"),
     path("auth/profile/", ProfileView.as_view(), name="profile"),
     path("auth/preferences/", PreferencesView.as_view(), name="preferences"),
     path("auth/sessions/", SessionsView.as_view(), name="sessions"),

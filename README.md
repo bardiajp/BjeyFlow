@@ -424,7 +424,8 @@ Docker:
 ```bash
 make build # Build Docker images initially or after dependency/Dockerfile changes
 make up    # Start PostgreSQL, migrate, and start built apps without rebuilding
-make seed  # Optional: create demo data (does not rebuild images)
+make seed  # Optional: interactively create a superuser (does not rebuild images)
+make seed-demo # Optional: create development sample data
 make down  # Stop containers; keep database data
 ```
 
@@ -444,9 +445,24 @@ container volume, refreshed by `make up` so rebuilt dependencies take effect.
 Run `make migrate` (or `make up`) after adding database migrations.
 These containers run development servers, not production servers.
 
+### Superuser seed
+
+Run `make seed` after `make build` to migrate the development database and create
+a superuser. It prompts for the username, display name, optional email, and
+password; the password is hidden and must pass Django's password validators.
+Existing active superusers are left unchanged. An existing regular or inactive
+account is never promoted or modified. There are no default credentials.
+
+For automation, set `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_DISPLAY_NAME`,
+`DJANGO_SUPERUSER_EMAIL` (empty is allowed), and `DJANGO_SUPERUSER_PASSWORD` in
+the environment before running `make seed`. Do not put passwords directly in
+shell command arguments, source code, or version control. This Make target uses
+the development Compose stack, not production. For production, follow the
+interactive superuser procedure in `docker/production/README.md`.
+
 ### Development seed data
 
-Run `make seed` after `make build` to migrate and populate the database using the
+Run `make seed-demo` after `make build` to migrate and populate the database using the
 Docker backend image. It starts PostgreSQL if needed and does not rebuild images
 or automatically seed on every application startup. For a native setup, use
 `make seed-local` or `.venv/bin/python backend/manage.py seed`.
@@ -460,10 +476,10 @@ are enough tasks to exercise backend pagination and frontend filtering/boards.
 New sample tasks are dated relative to the run date; existing dates are preserved.
 
 ```bash
-make seed                                        # Default dataset for demo
-make seed SEED_USERNAME=alex                      # Use your existing login
-make seed SEED_PROJECTS=20 SEED_TASKS=300 SEED_SUBTASKS=8
-make seed SEED_USERNAME=alex SEED_ARGS="--append"  # Add a fresh, separate batch
+make seed-demo                                        # Default dataset for demo
+make seed-demo SEED_USERNAME=alex                      # Use your existing login
+make seed-demo SEED_PROJECTS=20 SEED_TASKS=300 SEED_SUBTASKS=8
+make seed-demo SEED_USERNAME=alex SEED_ARGS="--append"  # Add a fresh, separate batch
 make seed-local SEED_USERNAME=alex                # Same options without Docker
 ```
 

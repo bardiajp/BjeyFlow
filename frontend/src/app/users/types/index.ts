@@ -11,6 +11,8 @@ export interface User {
     flow_name: string;
     focus_style: 'morning_tide' | 'night_current' | 'steady_tide';
     north_star: string;
+    avatar: string;
+    preferences: Partial<import('@/store/use-preferences').Preferences>;
 }
 
 export interface AuthResponse {

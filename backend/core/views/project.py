@@ -1,4 +1,4 @@
-from django.db.models import Count
+from django.db.models import Count, Q
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
@@ -13,13 +13,13 @@ class ProjectViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated, IsProjectOwner)
     lookup_value_converter = "uuid"
     filterset_fields = ("is_archived",)
-    search_fields = ("name", "description")
+    search_fields = ("name", "description", "key")
     ordering_fields = ("name", "position", "created_at", "updated_at")
     ordering = ("position", "created_at", "id")
 
     def get_queryset(self):
         return Project.objects.filter(owner=self.request.user).annotate(
-            tasks_count=Count("tasks")
+            tasks_count=Count("tasks", filter=Q(tasks__deleted_at__isnull=True))
         )
 
     def perform_destroy(self, instance):

@@ -1,29 +1,22 @@
 import { isAxiosError } from 'axios';
-import { ZodError } from 'zod';
 import { useEffect, useEffectEvent } from 'react';
 import { toast } from '@/components/ui/toast';
+import ErrorState from './error-state';
+import { errorMessage } from '@/lib/error-message';
 
-function errorMessage(error: unknown): string {
-    if (error instanceof ZodError) return error.issues.map((issue) => issue.message).join(' ');
-    if (isAxiosError(error)) {
-        const body: unknown = error.response?.data;
-        if (typeof body === 'object' && body !== null) {
-            return Object.entries(body)
-                .map(([key, value]) => {
-                    const text = Array.isArray(value) ? value.join(' ') : String(value);
-                    return key === 'detail' || key === 'non_field_errors'
-                        ? text
-                        : `${key}: ${text}`;
-                })
-                .join(' ');
-        }
-        return error.message;
-    }
-    return error instanceof Error ? error.message : 'Something went wrong.';
-}
-
-export default function DisplayError({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
-    const message = error ? errorMessage(error) : null;
+export default function DisplayError({
+    error,
+    onRetry,
+    fullPage = false,
+}: {
+    error: unknown;
+    onRetry?: () => void;
+    fullPage?: boolean;
+}) {
+    const connectionError = isAxiosError(error) && !error.response;
+    const serverError = isAxiosError(error) && !!error.response && error.response.status >= 500;
+    const systemError = connectionError || serverError;
+    const message = error && !systemError ? errorMessage(error) : null;
     const showToast = useEffectEvent(() =>
         toast.add({
             type: 'destructive',
@@ -39,5 +32,11 @@ export default function DisplayError({ error, onRetry }: { error: unknown; onRet
         return () => toast.close(id);
     }, [message]);
 
-    return null;
+    return systemError ? (
+        <ErrorState
+            kind={connectionError ? 'connection' : 'server'}
+            fullPage={fullPage}
+            onRetry={onRetry ?? (() => window.location.reload())}
+        />
+    ) : null;
 }

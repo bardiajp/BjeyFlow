@@ -21,12 +21,23 @@ class ManagedUserSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "mobile",
+            "email",
             "is_active",
             "role",
             "password",
             "date_joined",
+            "last_login",
         )
-        read_only_fields = ("id", "date_joined")
+        read_only_fields = ("id", "date_joined", "last_login")
+
+    def validate_email(self, value):
+        value = value.lower()
+        queryset = User.objects.filter(email__iexact=value).exclude(email="")
+        if self.instance is not None:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
 
     def validate(self, attrs):
         if self.instance is None and not attrs.get("password"):
@@ -34,7 +45,11 @@ class ManagedUserSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        return user_management_service.create_user(validated_data)
+        return user_management_service.create_user(
+            self.context["request"].user, validated_data
+        )
 
     def update(self, instance, validated_data):
-        return user_management_service.update_user(instance, validated_data)
+        return user_management_service.update_user(
+            self.context["request"].user, instance, validated_data
+        )

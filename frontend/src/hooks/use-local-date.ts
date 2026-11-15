@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { localDate } from '@/lib/date';
+import { todayDate } from '@/lib/date';
+import { usePreferences } from '@/store/use-preferences';
 
 export function useLocalDate() {
-    const [today, setToday] = useState(() => localDate());
+    usePreferences((state) => state.timeZone);
+    const [now, setNow] = useState(() => new Date());
     useEffect(() => {
-        const interval = setInterval(() => setToday(localDate()), 60_000);
+        const interval = setInterval(() => setNow(new Date()), 30_000);
         return () => clearInterval(interval);
     }, []);
-    return today;
+    return todayDate(now);
 }

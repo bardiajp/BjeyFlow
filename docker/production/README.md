@@ -42,6 +42,65 @@ copy backups off-server. Do not run `docker system prune -a` indiscriminately.
 
 ## Manual operation
 
+### Administration, backups and retention
+
+The administration application requires its database migrations. Gunicorn's
+entry point applies them on deployment. There are no production default admin
+credentials; provision the first superuser interactively:
+
+```sh
+docker compose --env-file .env.production -f compose.production.yml exec backend python manage.py createsuperuser
+```
+
+The backend mounts only `deploy-data/status` read-only for backup metadata.
+`backup-database.sh` atomically publishes a timestamp and dump size there; the
+actual backup directory, dumps, secrets, mail data and Docker socket are not
+mounted into the application. The Services page does not offer backup downloads
+or privileged server commands. Existing dumps are not reported until the updated
+backup script publishes a successful result.
+
+To enable daily database backups followed by configured Trash cleanup, install
+the supplied maintenance unit and timer:
+
+```sh
+install -m 644 docker/production/bjeyflow-maintenance.service docker/production/bjeyflow-maintenance.timer /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now bjeyflow-maintenance.timer
+```
+
+The job shares the deployment lock, requires a successful database backup before
+cleanup, and permanently deletes only tasks older than the retention period set
+by a superuser. `0` disables cleanup. A nonzero retention policy does nothing
+automatically until this timer (or an equivalent scheduler) is enabled. Inspect
+`journalctl -u bjeyflow-maintenance.service` for failures. Backups are not pruned;
+monitor disk usage and maintain a tested, access-controlled off-server copy.
+Do not expose maintenance or backup execution as public HTTP endpoints.
+
+Health checks authenticate to SMTP without sending a message. Console or custom
+email backends are labeled explicitly. Email events report backend acceptance
+or failure only; they do not claim external inbox delivery. In development,
+password-reset/verification emails remain in console logs, as before. Error
+records in the panel contain source/category only, not exception text or traces.
+
+Password recovery uses `APP_URL` as the trusted frontend origin; the production
+Compose file sets it from `APP_DOMAIN`. Development defaults to
+`http://localhost:5174`; set `APP_URL` when using another frontend origin.
+Reset links expire after 30 minutes, are invalidated after use, and do not
+reveal whether an email is registered. Delivery failures are logged on the
+backend. Existing JWT cookies become invalid the first time password-based
+session revocation is deployed; users must sign in again. Subsequent password
+changes revoke their previous JWT sessions.
+
+Migration `core.0003_task_deleted_at` adds the task recycle bin. Normal deletion
+keeps the task and its checklist in Trash indefinitely; only the explicit
+permanent-delete action removes them. Trashed tasks are excluded from regular
+task lists, project counts, and editing/reordering endpoints. Projects with
+tasks in Trash remain protected from deletion; restore or permanently remove
+those tasks first.
+
+The offline screen works once the app has loaded; it is not an offline/PWA
+installation and cannot load the application from scratch without a network.
+
 The production stack is separate from the development Compose file. It runs
 Nginx with the Vite production build, non-root Gunicorn (two workers/two threads),
 PostgreSQL 18, a shared Redis cache, and Docker Mailserver 17. Database and Redis

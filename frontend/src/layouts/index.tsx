@@ -12,9 +12,13 @@ import { AppHeader } from './header';
 import { AppSidebar } from './sidebar';
 import { PageTransition } from '@/components/page-transition';
 import { SearchDialog } from './search-dialog';
+import { useSiteSettings } from '@/hooks/use-site-settings';
+import { useTaskNotifications } from '@/hooks/use-task-notifications';
+import { usePreferences } from '@/store/use-preferences';
 
 export default function Layout() {
     const location = useLocation();
+    const site = useSiteSettings();
     const navigate = useNavigate();
     const projectRoute = useMatch('/projects/:projectId');
     const { projects, tasks } = useAppData();
@@ -38,6 +42,9 @@ export default function Layout() {
     const [helpOpen, setHelpOpen] = useState(false);
     const searchRef = useRef<HTMLInputElement>(null);
     const selected = tasks.data?.find((task) => task.id === selectedTask);
+    usePreferences((state) => state.calendar);
+    usePreferences((state) => state.hourCycle);
+    useTaskNotifications(tasks.data ?? [], openTask);
     const createTask = (projectId?: string) =>
         setTaskCreate({
             projectId: projectId ?? projectRoute?.params.projectId,
@@ -48,17 +55,30 @@ export default function Layout() {
         '/today': 'Today',
         '/upcoming': 'Upcoming',
         '/completed': 'Completed',
+        '/trash': 'Trash',
         '/settings': 'Settings',
         '/settings/users': 'User management',
+        '/admin': 'Administration',
+        '/admin/users': 'People',
+        '/admin/activity': 'Activity',
+        '/admin/services': 'Services',
+        '/admin/emails': 'Email',
+        '/admin/email-templates': 'Email templates',
+        '/admin/errors': 'Errors',
+        '/admin/settings': 'Workspace settings',
     };
     const title = projectRoute
         ? (projects.data?.find((project) => project.id === projectRoute.params.projectId)?.name ??
           'Project')
-        : (titles[location.pathname] ?? 'Today');
+        : (titles[location.pathname] ??
+          (location.pathname.startsWith('/admin') ? 'Administration' : 'Today'));
     const breadcrumbParents = [
         { label: 'Home', to: '/today' },
         ...(location.pathname === '/settings/users'
             ? [{ label: 'Settings', to: '/settings' }]
+            : []),
+        ...(location.pathname.startsWith('/admin/')
+            ? [{ label: 'Administration', to: '/admin' }]
             : []),
     ];
     useEffect(() => {
@@ -91,14 +111,18 @@ export default function Layout() {
         return () => window.removeEventListener('keydown', handle);
     }, [location.pathname, today, projectRoute?.params.projectId]);
     useEffect(() => {
-        document.title = `${title} · BjeyFlow`;
-    }, [title]);
+        document.title = `${title} · ${site.app_name}`;
+    }, [title, site.app_name]);
     const context: TaskLayoutContext = {
         search,
         today,
         openTask,
         createTask,
         createProject: () => setProjectOpen(true),
+        editProject: (id) => {
+            setEditingProject(id);
+            setEditingProjectOpen(true);
+        },
     };
     const sidebar = (compact = false) => (
         <AppSidebar
@@ -129,7 +153,7 @@ export default function Layout() {
                 <div className="sticky top-0 hidden h-dvh min-w-0 overflow-hidden lg:block">
                     {sidebar(collapsed)}
                 </div>
-                <div className="min-w-0">
+                <div className="flex min-h-dvh min-w-0 flex-col">
                     <AppHeader
                         helpOpen={helpOpen}
                         onHelpOpenChange={setHelpOpen}
@@ -148,8 +172,15 @@ export default function Layout() {
                         today={today}
                         onOpenTask={openTask}
                     />
-                    <main className="min-w-0 px-4 pt-6 pb-10 sm:px-6 lg:px-7 xl:px-8">
-                        <PageTransition key={location.pathname}>
+                    <main className="flex min-h-0 min-w-0 flex-1 flex-col px-4 pt-6 pb-6 sm:px-6 lg:px-7 xl:px-8">
+                        <PageTransition
+                            key={
+                                location.pathname.startsWith('/admin')
+                                    ? '/admin'
+                                    : location.pathname
+                            }
+                            className="flex min-h-0 w-full flex-1 flex-col"
+                        >
                             <Outlet context={context} />
                         </PageTransition>
                     </main>

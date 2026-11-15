@@ -1,95 +1,97 @@
-from django.db.models.deletion import ProtectedError
-from rest_framework import status, viewsets
-from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
+from smtplib import SMTPException
 
-from users.auth import change_password
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import APIException, ValidationError
+from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
+
+from administration.audit import record_event
 from users.models import User
-from users.permissions import IsSystemAdministrator
+from users.permissions import HasAccountableRole
 from users.serializers.auth import ResetPasswordSerializer
 from users.serializers.management import ManagedUserSerializer
+from users.services.management import user_management_service
+from users.services.password_reset import send_password_reset
+
+
+class AdminEmailThrottle(UserRateThrottle):
+    scope = "admin_email"
 
 
 class UserManagementViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
     serializer_class = ManagedUserSerializer
-    permission_classes = (IsAuthenticated, IsSystemAdministrator)
+    permission_classes = (HasAccountableRole,)
+    search_fields = ("username", "display_name", "email")
+    filterset_fields = ("is_active", "is_staff", "is_superuser")
+
+    def get_queryset(self):
+        queryset = User.objects.all()
+        return (
+            queryset
+            if self.request.user.is_superuser
+            else queryset.filter(is_staff=False, is_superuser=False)
+        )
 
     def perform_destroy(self, instance):
-        if (
-            instance.is_superuser
-            and not User.objects.filter(is_superuser=True, is_active=True)
-            .exclude(pk=instance.pk)
-            .exists()
-        ):
-            msg = "At least one active system administrator must remain."
-            raise ValidationError({"detail": msg})
-        try:
-            instance.delete()
-        except ProtectedError as error:
-            raise ValidationError(
-                {
-                    "detail": "This account owns projects containing tasks. Remove its tasks before deleting the account."
-                }
-            ) from error
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.pk == request.user.pk:
-            msg = "You cannot delete your own account."
-            raise ValidationError({"detail": msg})
-        self.perform_destroy(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        user_management_service.delete_user(self.request.user, instance)
 
     @action(detail=True, methods=["post"])
     def disable(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.pk == request.user.pk:
-            msg = "You cannot disable your own account."
-            raise ValidationError({"detail": msg})
-        if not instance.is_active:
-            msg = "User is already disabled."
-            raise ValidationError({"detail": msg})
-        if (
-            instance.is_superuser
-            and not User.objects.filter(is_superuser=True, is_active=True)
-            .exclude(pk=instance.pk)
-            .exists()
-        ):
-            msg = "At least one active system administrator must remain."
-            raise ValidationError({"detail": msg})
-
-        instance.is_active = False
-        instance.save(update_fields=["is_active"])
+        instance = user_management_service.update_user(
+            request.user, self.get_object(), {"is_active": False}
+        )
         return Response(self.get_serializer(instance).data)
 
     @action(detail=True, methods=["post"])
     def activate(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.is_active:
-            msg = "User is already active."
-            raise ValidationError({"detail": msg})
-        instance.is_active = True
-        instance.save(update_fields=["is_active"])
+        instance = user_management_service.update_user(
+            request.user, self.get_object(), {"is_active": True}
+        )
         return Response(self.get_serializer(instance).data)
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="reset-password",
-        permission_classes=[IsAuthenticated, IsSystemAdministrator],
-    )
+    @action(detail=True, methods=["post"], url_path="reset-password")
     def reset_password(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.pk == request.user.pk:
-            msg = "Use the change-password endpoint to update your own password."
-            raise ValidationError({"detail": msg})
-
         serializer = ResetPasswordSerializer(
             data=request.data, context={"user": instance}
         )
         serializer.is_valid(raise_exception=True)
-        change_password(instance, serializer.validated_data["new_password"])
+        user_management_service.update_user(
+            request.user,
+            instance,
+            {"password": serializer.validated_data["new_password"]},
+        )
         return Response({"detail": "Password reset successfully."})
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="send-reset-link",
+        throttle_classes=[AdminEmailThrottle],
+    )
+    def send_reset_link(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if not instance.is_active or not instance.email:
+            raise ValidationError(
+                {"detail": "An active account with an email address is required."}
+            )
+        try:
+            send_password_reset(instance)
+        except (SMTPException, OSError) as exc:
+            error = APIException(
+                "The email service could not accept the message. Try again later."
+            )
+            error.status_code = 503
+            raise error from exc
+        record_event(
+            "user.reset_link_sent",
+            actor=request.user,
+            target=instance.username,
+            request=request,
+        )
+        return Response(
+            {
+                "detail": "The reset email was accepted by the email backend. Inbox delivery is not verified."
+            }
+        )

@@ -52,6 +52,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "flow_name",
             "focus_style",
             "north_star",
+            "avatar",
+            "preferences",
             "role",
         )
 

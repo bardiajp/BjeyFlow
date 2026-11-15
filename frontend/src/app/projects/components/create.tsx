@@ -1,22 +1,24 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Controller, useForm } from 'react-hook-form';
+import { useLocation, useNavigate } from 'react-router';
+import { ArrowUpRight, FolderOpen, Palette, Text, Trash2 } from 'lucide-react';
 import { createProject } from '../api/create';
 import { updateProject } from '../api/update';
+import { deleteProject } from '../api/delete';
 import type { Project } from '../types';
 import { ProjectIconPicker } from './icon-picker';
 import { ProjectIcon } from './project-icon';
+import { ColorInput } from '@/components/form/color-input';
 import { projectSchema, type ProjectFormValues } from '../schema';
 import DisplayError from '@/components/display-error';
 import { LabeledInput } from '@/components/form/labeled';
 import { LabeledTextarea } from '@/components/form/labeled-textarea';
-import { ColorInput } from '@/components/form/color-input';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';
-import { DialogFooter } from '@/components/ui/dialog';
 import { setValidationErrors } from '@/lib/form';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { EditorHeader } from '@/components/editor-header';
-import { ArrowUpRight, FolderOpen, Palette, Text } from 'lucide-react';
+import { InlineConfirm } from '@/components/inline-confirm';
 
 export function ProjectEditor({
     open = true,
@@ -29,7 +31,9 @@ export function ProjectEditor({
     onClosed?: () => void;
     project?: Project;
 }) {
-    const queryClient = useQueryClient();
+    const client = useQueryClient();
+    const navigate = useNavigate();
+    const location = useLocation();
     const {
         register,
         control,
@@ -41,26 +45,42 @@ export function ProjectEditor({
     } = useForm<ProjectFormValues>({
         values: {
             name: project?.name ?? '',
+            key: project?.key ?? '',
             description: project?.description ?? '',
             color: project?.color ?? '#8ECAE6',
             icon: project?.icon ?? 'hash',
         },
     });
     const [name, icon, color] = watch(['name', 'icon', 'color']);
+    const invalidate = () =>
+        Promise.all([
+            client.invalidateQueries({ queryKey: ['projects'] }),
+            client.invalidateQueries({ queryKey: ['tasks'] }),
+        ]);
     const mutation = useMutation({
         mutationFn: (values: ProjectFormValues) =>
             project ? updateProject(project.id, values) : createProject(values),
-        onSuccess: async (_, values) => {
+        onSuccess: async (data) => {
             toast.add({
-                type: project ? 'info' : 'success',
-                title: project ? 'Project updated' : 'Project created successfully',
-                description: `“${values.name}” has been ${project ? 'updated' : 'created'} successfully.`,
+                type: 'success',
+                title: project ? 'Project updated' : 'Project created',
+                description: `${data.key} · ${data.name}`,
             });
-            await queryClient.invalidateQueries({ queryKey: ['projects'] });
-            await queryClient.invalidateQueries({ queryKey: ['tasks'] });
+            await invalidate();
             onClose();
         },
     });
+    const remove = useMutation({
+        mutationFn: deleteProject,
+        onSuccess: async (_, id) => {
+            toast.add({ type: 'success', title: 'Project deleted' });
+            onClose();
+            if (location.pathname === `/projects/${id}`) navigate('/inbox', { replace: true });
+            await invalidate();
+        },
+    });
+    const busy = mutation.isPending || remove.isPending;
+
     return (
         <Drawer
             open={open}
@@ -69,11 +89,12 @@ export function ProjectEditor({
                 if (!isOpen) {
                     reset();
                     mutation.reset();
+                    remove.reset();
                     onClosed?.();
                 }
             }}
-            onOpenChange={(open) => {
-                if (!open && !mutation.isPending) onClose();
+            onOpenChange={(isOpen) => {
+                if (!isOpen && !busy) onClose();
             }}
         >
             <DrawerContent className="bg-workspace max-w-2xl border border-white shadow-[0_16px_80px_-24px_#02304750]">
@@ -86,7 +107,7 @@ export function ProjectEditor({
                     }
                     icon={<FolderOpen size={24} strokeWidth={1.5} />}
                     onClose={onClose}
-                    disabled={mutation.isPending}
+                    disabled={busy}
                 />
                 <form
                     className="editor-form grid gap-5"
@@ -95,10 +116,10 @@ export function ProjectEditor({
                         const parsed = projectSchema.safeParse(values);
                         if (!parsed.success)
                             return setValidationErrors(parsed.error.issues, setError);
-                        if (!mutation.isPending) mutation.mutate(parsed.data);
+                        if (!busy) mutation.mutate(parsed.data);
                     })}
                 >
-                    <fieldset disabled={mutation.isPending} className="grid min-w-0 gap-5">
+                    <fieldset disabled={busy} className="grid min-w-0 gap-5">
                         <div className="relative overflow-hidden rounded-[22px] border border-white bg-white p-5 shadow-[0_3px_16px_-12px_#02304725]">
                             <div
                                 className="pointer-events-none absolute inset-y-0 left-0 w-1 rounded-full"
@@ -145,19 +166,44 @@ export function ProjectEditor({
                                     Give it a little context
                                 </span>
                             </div>
-                            <LabeledInput
-                                label="Project name"
-                                autoFocus
-                                className="h-11 text-sm"
-                                placeholder="Give your idea a name"
-                                error={errors.name?.message}
-                                {...register('name')}
-                            />
+                            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_8rem]">
+                                <LabeledInput
+                                    label="Project name"
+                                    placeholder="Give your idea a name"
+                                    autoFocus
+                                    error={errors.name?.message}
+                                    {...register('name')}
+                                />
+                                <Controller
+                                    name="key"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <LabeledInput
+                                            {...field}
+                                            onChange={(event) =>
+                                                field.onChange(event.target.value.toUpperCase())
+                                            }
+                                            label="Key"
+                                            placeholder="FLOW"
+                                            maxLength={4}
+                                            autoCapitalize="characters"
+                                            autoComplete="off"
+                                            spellCheck={false}
+                                            className="font-mono tracking-wider"
+                                            error={errors.key?.message}
+                                        />
+                                    )}
+                                />
+                            </div>
+                            <p className="text-muted-foreground -mt-3 text-[11px] leading-6">
+                                2–4 letters (A–Z), unique in your workspace. Task IDs look like
+                                FLOW-1.
+                                {project && ' Changing the key updates this project’s task IDs.'}
+                            </p>
                             <LabeledTextarea
                                 label="Description"
                                 placeholder="What is this project about?"
                                 rows={3}
-                                className="resize-none text-sm"
                                 {...register('description')}
                             />
                         </div>
@@ -172,27 +218,27 @@ export function ProjectEditor({
                                 </span>
                             </div>
                             <Controller
-                                control={control}
                                 name="icon"
+                                control={control}
                                 render={({ field }) => (
                                     <ProjectIconPicker
                                         value={field.value}
                                         onChange={field.onChange}
-                                        disabled={mutation.isPending}
+                                        disabled={busy}
                                     />
                                 )}
                             />
                             <div className="border-t border-slate-100 pt-5">
                                 <Controller
-                                    control={control}
                                     name="color"
+                                    control={control}
                                     render={({ field }) => (
                                         <ColorInput
                                             containerClassName="project-colors"
                                             label="Project color"
                                             {...field}
                                             error={errors.color?.message}
-                                            disabled={mutation.isPending}
+                                            disabled={busy}
                                         />
                                     )}
                                 />
@@ -200,28 +246,47 @@ export function ProjectEditor({
                         </div>
                     </fieldset>
                     <DisplayError error={mutation.error} />
-                    <DialogFooter className="sticky -bottom-6 z-10 -mx-6 -mb-6 items-center gap-2 border-slate-200/80 bg-white/95 px-6 py-4 shadow-[0_-8px_24px_-16px_#02304730] backdrop-blur-xl sm:-bottom-8 sm:-mx-8 sm:-mb-8 sm:px-8">
+                    {project && (
+                        <div className="border-input flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+                            <p className="text-muted-foreground max-w-56 text-[11px] leading-6">
+                                Only empty projects can be deleted, including tasks in Trash.
+                            </p>
+                            <InlineConfirm
+                                label={`Delete project ${project.name}`}
+                                title="Delete project?"
+                                description="This permanently deletes the empty project. Move or permanently delete all its tasks first, including tasks in Trash."
+                                confirmLabel="Delete project"
+                                disabled={busy}
+                                onConfirm={() => remove.mutateAsync(project.id)}
+                            >
+                                <Trash2 size={13} />
+                                Delete
+                            </InlineConfirm>
+                        </div>
+                    )}
+                    <footer className="sticky -bottom-6 z-10 -mx-6 -mb-6 flex items-center justify-end gap-2 border-t border-slate-200/80 bg-white/95 px-6 py-4 shadow-[0_-8px_24px_-16px_#02304730] backdrop-blur-xl sm:-bottom-8 sm:-mx-8 sm:-mb-8 sm:px-8">
                         <span className="mr-auto hidden text-[10px] text-slate-400 sm:block">
                             A little space. A lot of possibility.
                         </span>
                         <Button
                             type="button"
                             variant="cancel"
-                            onClick={onClose}
-                            disabled={mutation.isPending}
                             className="h-10 rounded-xl border-slate-200 px-5 text-xs text-slate-500"
+                            disabled={busy}
+                            onClick={onClose}
                         >
                             Cancel
                         </Button>
                         <Button
                             type="submit"
                             isPending={mutation.isPending}
+                            disabled={remove.isPending}
                             className="bg-brand h-10 gap-2 rounded-xl px-5 text-xs text-white shadow-[0_4px_12px_-5px_#02304750]"
                         >
-                            {project ? 'Save project' : 'Create project'}
+                            {project ? 'Save changes' : 'Create project'}
                             <ArrowUpRight size={15} />
                         </Button>
-                    </DialogFooter>
+                    </footer>
                 </form>
             </DrawerContent>
         </Drawer>

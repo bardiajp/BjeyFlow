@@ -24,7 +24,11 @@ export function SearchDialog({
     const listId = useId();
     const term = query.trim().toLocaleLowerCase();
     const matches = (tasks.data ?? [])
-        .filter((task) => `${task.title} ${task.description}`.toLocaleLowerCase().includes(term))
+        .filter((task) =>
+            `${task.identifier} ${task.title} ${task.description}`
+                .toLocaleLowerCase()
+                .includes(term)
+        )
         .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
     const results = matches.slice(0, 8);
 
@@ -45,7 +49,7 @@ export function SearchDialog({
             >
                 <DialogTitle className="sr-only">Search your tasks</DialogTitle>
                 <DialogDescription className="sr-only">
-                    Search all tasks by title or description. Use the arrow keys to choose a task
+                    Search tasks by ID, title or description. Use the arrow keys to choose a task
                     and Enter to open it.
                 </DialogDescription>
                 <div className="surface-wash border-primary/15 relative min-w-0 shrink-0 overflow-hidden border-b px-5 pt-5 pb-6">
@@ -172,6 +176,9 @@ export function SearchDialog({
                                 </span>
                                 <span className="min-w-0 flex-1 overflow-hidden">
                                     <span className="text-primary-foreground block truncate text-[13px] font-medium">
+                                        <span className="text-muted-foreground mr-2 font-mono text-[10px]">
+                                            {task.identifier}
+                                        </span>
                                         {task.title}
                                     </span>
                                     <span className="mt-1 block truncate text-[10px] text-slate-400">

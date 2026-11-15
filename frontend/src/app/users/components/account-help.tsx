@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { useSiteSettings } from '@/hooks/use-site-settings';
 
 const helpContent = {
     account: {
@@ -11,7 +12,7 @@ const helpContent = {
     password: {
         title: 'Let’s get you back in',
         description:
-            'Contact your organization’s BjeyFlow administrator to reset your password. For your security, passwords can only be reset by an administrator.',
+            'Use Forgot password on the sign-in screen to receive a secure reset link at your account email. If you no longer have access to that email, contact your workspace administrator.',
     },
     privacy: {
         title: 'Your sign-in privacy',
@@ -36,6 +37,7 @@ export default function AccountHelp({
 }) {
     const [open, setOpen] = useState(false);
     const content = helpContent[topic];
+    const site = useSiteSettings();
     return (
         <>
             <button type="button" className={className} onClick={() => setOpen(true)}>
@@ -45,6 +47,14 @@ export default function AccountHelp({
                 <DialogContent>
                     <DialogTitle>{content.title}</DialogTitle>
                     <DialogDescription>{content.description}</DialogDescription>
+                    {site.support_email && (
+                        <a
+                            href={`mailto:${site.support_email}`}
+                            className="text-primary-foreground text-sm underline"
+                        >
+                            Contact support · {site.support_email}
+                        </a>
+                    )}
                 </DialogContent>
             </Dialog>
         </>

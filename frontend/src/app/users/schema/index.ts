@@ -14,6 +14,10 @@ export const userSchema = z.object({
     first_name: z.string().max(150),
     last_name: z.string().max(150),
     mobile: z.string().max(32),
+    email: z.union([
+        z.string().trim().email('Enter a valid email address').max(254),
+        z.literal(''),
+    ]),
     role: z.enum(['user', 'staff', 'superuser']),
 });
 

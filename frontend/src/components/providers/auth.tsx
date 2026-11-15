@@ -3,7 +3,7 @@ import { isAxiosError } from 'axios';
 import { useEffect, type ReactNode } from 'react';
 import { me } from '@/app/users/api/get-status';
 import DisplayError from '@/components/display-error';
-import Loading from '@/components/loading';
+import AppLoading from '@/components/app-loading';
 import useUserStore from '@/store/use-user-store';
 
 export default function AuthProvider({ children }: { children: ReactNode }) {
@@ -16,9 +16,9 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         else if (unauthorized) setUser(null);
     }, [query.data, unauthorized, setUser]);
 
-    if (query.isPending) return <Loading />;
+    if (query.isPending) return <AppLoading />;
     if (query.error && !unauthorized) {
-        return <DisplayError error={query.error} onRetry={() => void query.refetch()} />;
+        return <DisplayError error={query.error} fullPage onRetry={() => void query.refetch()} />;
     }
     return children;
 }

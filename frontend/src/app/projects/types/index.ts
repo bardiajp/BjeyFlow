@@ -16,6 +16,7 @@ export interface Project {
     id: string;
     owner: string;
     name: string;
+    key: string;
     description: string;
     icon: ProjectIconName;
     color: string;
@@ -26,4 +27,4 @@ export interface Project {
     updated_at: string;
 }
 
-export type CreateProject = Pick<Project, 'name' | 'description' | 'color' | 'icon'>;
+export type CreateProject = Pick<Project, 'name' | 'key' | 'description' | 'color' | 'icon'>;

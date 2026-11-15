@@ -4,17 +4,20 @@ import { Button } from '@/components/ui/button';
 import { formatTime } from '@/lib/date';
 import { cn } from '@/lib/utils';
 import { PickerField, type PickerFieldProps } from './picker-field';
+import { usePreferences } from '@/store/use-preferences';
 
 function TimeColumn({
     label,
     value,
     count,
     onChange,
+    twelveHour = false,
 }: {
     label: string;
     value: number;
     count: number;
     onChange: (value: number) => void;
+    twelveHour?: boolean;
 }) {
     const listRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -79,7 +82,7 @@ function TimeColumn({
                                 'border-primary/40 bg-primary/15 text-primary-foreground font-medium'
                         )}
                     >
-                        {String(option).padStart(2, '0')}
+                        {String(twelveHour && option === 0 ? 12 : option).padStart(2, '0')}
                     </button>
                 ))}
             </div>
@@ -88,6 +91,7 @@ function TimeColumn({
 }
 
 function ClockPicker({ value, onSelect }: { value: string; onSelect: (value: string) => void }) {
+    const hourCycle = usePreferences((state) => state.hourCycle);
     const [hour, setHour] = useState(() => (value ? Number(value.slice(0, 2)) : 9));
     const [minute, setMinute] = useState(() => (value ? Number(value.slice(3, 5)) : 0));
     const selected = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
@@ -138,17 +142,41 @@ function ClockPicker({ value, onSelect }: { value: string; onSelect: (value: str
                     </span>
                     <div>
                         <p className="text-primary-foreground text-[25px] leading-none font-medium tracking-tight tabular-nums">
-                            {selected}
+                            {formatTime(selected)}
                         </p>
                         <p className="mt-1.5 text-[9px] text-slate-400">
-                            24-hour time · {formatTime(selected)}
+                            {hourCycle === 'h12' ? '12-hour time' : '24-hour time'}
                         </p>
                     </div>
                 </div>
             </div>
             <div className="grid grid-cols-2 gap-3 p-4">
-                <TimeColumn label="Hour" value={hour} count={24} onChange={setHour} />
+                <TimeColumn
+                    label="Hour"
+                    value={hourCycle === 'h12' ? hour % 12 : hour}
+                    count={hourCycle === 'h12' ? 12 : 24}
+                    twelveHour={hourCycle === 'h12'}
+                    onChange={(value) =>
+                        setHour(hourCycle === 'h12' ? value + (hour >= 12 ? 12 : 0) : value)
+                    }
+                />
                 <TimeColumn label="Minute" value={minute} count={60} onChange={setMinute} />
+                {hourCycle === 'h12' && (
+                    <div className="col-span-2 flex gap-2">
+                        {['AM', 'PM'].map((label, index) => (
+                            <Button
+                                key={label}
+                                type="button"
+                                variant={Math.floor(hour / 12) === index ? 'default' : 'outline'}
+                                className="h-9 flex-1 rounded-xl text-xs"
+                                aria-pressed={Math.floor(hour / 12) === index}
+                                onClick={() => setHour((hour % 12) + index * 12)}
+                            >
+                                {label}
+                            </Button>
+                        ))}
+                    </div>
+                )}
             </div>
             <div className="flex items-center justify-between gap-2 border-t border-slate-200/70 p-3">
                 <Button
@@ -175,6 +203,7 @@ function ClockPicker({ value, onSelect }: { value: string; onSelect: (value: str
 }
 
 export function TimePicker({ onChange, ...props }: PickerFieldProps) {
+    usePreferences((state) => state.hourCycle);
     return (
         <PickerField
             {...props}

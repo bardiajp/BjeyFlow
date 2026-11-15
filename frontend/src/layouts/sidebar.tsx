@@ -1,6 +1,5 @@
-import { CalendarDays, CircleCheck, Pencil, Inbox, Plus } from 'lucide-react';
+import { CalendarDays, CircleCheck, Pencil, Inbox, Plus, Trash2, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router';
-import ballIcon from '@/assets/ball.svg';
 import { useAppData } from '@/app/tasks/hooks/use-app-data';
 import { NavItem } from '@/components/navigation/nav-item';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,8 @@ import { projectIcons } from '@/app/projects/icons';
 import { AccountMenu } from './account-menu';
 import { WeatherIcon } from '@/components/weather-icon';
 import { cn } from '@/lib/utils';
+import { useSiteSettings } from '@/hooks/use-site-settings';
+import { usePreferences } from '@/store/use-preferences';
 
 export function AppSidebar({
     today,
@@ -27,6 +28,7 @@ export function AppSidebar({
 }) {
     const { projects, tasks } = useAppData();
     const user = useUserStore((state) => state.user);
+    const site = useSiteSettings();
     const name = user?.display_name || user?.username || 'Your account';
     const initials = name
         .split(/\s+/)
@@ -34,7 +36,8 @@ export function AppSidebar({
         .map((part) => part[0])
         .join('')
         .toUpperCase();
-    const all = tasks.data;
+    const hideCompleted = usePreferences((state) => state.hideCompleted);
+    const all = tasks.data?.filter((task) => !hideCompleted || task.status !== 'completed');
     return (
         <aside
             data-collapsed={collapsed}
@@ -55,11 +58,12 @@ export function AppSidebar({
                 )}
             >
                 <span className="flex size-11 shrink-0 items-center justify-center">
-                    <img src={ballIcon} alt="" className="size-8 object-contain" />
+                    <img src="/images/ball.svg" alt="" className="size-8 object-contain" />
                 </span>
                 <span className="sidebar-copy whitespace-nowrap">
                     <span className="text-primary-foreground block text-[22px] leading-tight font-semibold tracking-[-0.8px]">
-                        BjeyFlow<span className="text-secondary">.</span>
+                        {site.app_name}
+                        <span className="text-secondary">.</span>
                     </span>
                     <span className="mt-0.5 block text-[10px] tracking-[0.12em] text-slate-400">
                         A LITTLE MORE FLOW
@@ -105,7 +109,28 @@ export function AppSidebar({
                     label="Completed"
                     onNavigate={onNavigate}
                 />
+                <NavItem
+                    to="/trash"
+                    collapsed={collapsed}
+                    icon={Trash2}
+                    label="Trash"
+                    onNavigate={onNavigate}
+                />
             </nav>
+            {user && user.role !== 'user' && (
+                <nav
+                    aria-label="Workspace administration"
+                    className="mt-4 shrink-0 border-t border-slate-200/70 pt-3"
+                >
+                    <NavItem
+                        to="/admin"
+                        collapsed={collapsed}
+                        icon={ShieldCheck}
+                        label="Administration"
+                        onNavigate={onNavigate}
+                    />
+                </nav>
+            )}
             <section className="mt-7 flex min-h-0 w-full flex-1 flex-col">
                 <div
                     className={cn(

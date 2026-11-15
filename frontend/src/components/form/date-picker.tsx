@@ -1,35 +1,38 @@
 import { CalendarDays, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Button } from '@/components/ui/button';
-import { addDays, localDate } from '@/lib/date';
+import {
+    addDays,
+    todayDate,
+    calendarMonthStart,
+    calendarParts,
+    formatCalendarDate,
+    shiftCalendarMonth,
+    weekLabels,
+} from '@/lib/date';
+import { usePreferences } from '@/store/use-preferences';
 import { cn } from '@/lib/utils';
 import { PickerField, type PickerFieldProps } from './picker-field';
 
 function Calendar({ value, onSelect }: { value: string; onSelect: (value: string) => void }) {
-    const today = localDate();
+    const today = todayDate();
+    const { weekStart, calendar } = usePreferences();
     const [focused, setFocused] = useState(value || today);
-    const [month, setMonth] = useState(() => {
-        const date = new Date(`${value || today}T12:00:00`);
-        return new Date(date.getFullYear(), date.getMonth(), 1, 12);
-    });
+    const [monthDay, setMonth] = useState(value || today);
+    const month = calendarMonthStart(monthDay);
     const focusedRef = useRef<HTMLButtonElement>(null);
-    const start = addDays(localDate(month), -((month.getDay() + 6) % 7));
+    const start = addDays(month, -((new Date(`${month}T12:00:00`).getDay() - weekStart + 7) % 7));
 
     useEffect(() => {
         focusedRef.current?.focus({ preventScroll: true });
     }, [focused]);
 
     const focusDay = (day: string) => {
-        const date = new Date(`${day}T12:00:00`);
         setFocused(day);
-        setMonth(new Date(date.getFullYear(), date.getMonth(), 1, 12));
+        setMonth(day);
     };
     const shiftMonth = (amount: number) => {
-        const date = new Date(`${focused}T12:00:00`);
-        const next = new Date(month.getFullYear(), month.getMonth() + amount, 1, 12);
-        const lastDay = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
-        next.setDate(Math.min(date.getDate(), lastDay));
-        focusDay(localDate(next));
+        focusDay(shiftCalendarMonth(focused, amount));
     };
     const navigate = (event: KeyboardEvent<HTMLButtonElement>, day: string) => {
         const offsets: Record<string, number> = {
@@ -45,7 +48,7 @@ function Calendar({ value, onSelect }: { value: string; onSelect: (value: string
         } else if (event.key === 'Home' || event.key === 'End') {
             event.preventDefault();
             event.stopPropagation();
-            const weekday = (new Date(`${day}T12:00:00`).getDay() + 6) % 7;
+            const weekday = (new Date(`${day}T12:00:00`).getDay() - weekStart + 7) % 7;
             focusDay(addDays(day, event.key === 'Home' ? -weekday : 6 - weekday));
         } else if (event.key === 'PageUp' || event.key === 'PageDown') {
             event.preventDefault();
@@ -75,7 +78,7 @@ function Calendar({ value, onSelect }: { value: string; onSelect: (value: string
                         aria-live="polite"
                         className="text-primary-foreground text-[13px] font-semibold"
                     >
-                        {month.toLocaleDateString([], { month: 'long', year: 'numeric' })}
+                        {formatCalendarDate(month, { month: 'long', year: 'numeric' })}
                     </span>
                     <Button
                         type="button"
@@ -110,11 +113,11 @@ function Calendar({ value, onSelect }: { value: string; onSelect: (value: string
                 </div>
                 <div
                     role="grid"
-                    aria-label={month.toLocaleDateString([], { month: 'long', year: 'numeric' })}
+                    aria-label={formatCalendarDate(month, { month: 'long', year: 'numeric' })}
                     className="grid gap-1"
                 >
                     <div role="row" className="grid grid-cols-7">
-                        {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((day) => (
+                        {weekLabels().map((day) => (
                             <span
                                 key={day}
                                 role="columnheader"
@@ -128,14 +131,13 @@ function Calendar({ value, onSelect }: { value: string; onSelect: (value: string
                         <div key={week} role="row" className="grid grid-cols-7 gap-1">
                             {Array.from({ length: 7 }, (_, weekday) => {
                                 const day = addDays(start, week * 7 + weekday);
-                                const date = new Date(`${day}T12:00:00`);
                                 return (
                                     <div key={day} role="gridcell" aria-selected={day === value}>
                                         <button
                                             ref={day === focused ? focusedRef : undefined}
                                             type="button"
                                             tabIndex={day === focused ? 0 : -1}
-                                            aria-label={date.toLocaleDateString([], {
+                                            aria-label={formatCalendarDate(day, {
                                                 dateStyle: 'full',
                                             })}
                                             aria-current={day === today ? 'date' : undefined}
@@ -144,7 +146,7 @@ function Calendar({ value, onSelect }: { value: string; onSelect: (value: string
                                             onKeyDown={(event) => navigate(event, day)}
                                             className={cn(
                                                 'flow-control flex aspect-square w-full items-center justify-center rounded-xl border border-transparent text-[11px] text-slate-600 tabular-nums outline-none',
-                                                date.getMonth() !== month.getMonth() &&
+                                                calendarMonthStart(day) !== month &&
                                                     'text-slate-300',
                                                 day === today &&
                                                     'border-primary/40 text-primary-foreground font-semibold',
@@ -152,7 +154,9 @@ function Calendar({ value, onSelect }: { value: string; onSelect: (value: string
                                                     'bg-brand font-medium text-white shadow-sm'
                                             )}
                                         >
-                                            {date.getDate()}
+                                            {new Intl.NumberFormat(
+                                                calendar === 'persian' ? 'fa-IR' : 'en-US'
+                                            ).format(calendarParts(day).day)}
                                         </button>
                                     </div>
                                 );
@@ -179,8 +183,9 @@ function Calendar({ value, onSelect }: { value: string; onSelect: (value: string
 }
 
 export function DatePicker({ onChange, ...props }: PickerFieldProps) {
+    usePreferences((state) => state.calendar);
     const displayValue = props.value
-        ? new Date(`${props.value}T12:00:00`).toLocaleDateString([], {
+        ? formatCalendarDate(props.value, {
               month: 'short',
               day: 'numeric',
               year: 'numeric',

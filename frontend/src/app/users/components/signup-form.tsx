@@ -32,9 +32,11 @@ import { toast } from '@/components/ui/toast';
 import { setValidationErrors } from '@/lib/form';
 import { cn } from '@/lib/utils';
 import useUserStore from '@/store/use-user-store';
+import { useSiteSettings } from '@/hooks/use-site-settings';
 
 export default function SignupForm() {
     const navigate = useNavigate();
+    const site = useSiteSettings();
     const queryClient = useQueryClient();
     const setUser = useUserStore((state) => state.setUser);
     const [step, setStep] = useState(0);
@@ -148,6 +150,24 @@ export default function SignupForm() {
         ? Math.max(0, Math.ceil((new Date(challenge.expires_at).getTime() - now) / 1000))
         : 0;
     const titles = ['Your first ripple', 'Make it your own', 'One last little step'];
+
+    if (!site.signup_enabled && !challenge)
+        return (
+            <div className="max-w-sm text-center">
+                <h1 className="text-foreground text-2xl font-medium">
+                    <AccentTitle>A little pause in new beginnings</AccentTitle>
+                </h1>
+                <p className="text-muted-foreground mt-4 text-sm leading-7">
+                    New registrations are currently paused. Existing users can still sign in.
+                </p>
+                <Link
+                    to="/login"
+                    className="text-primary-foreground mt-6 inline-block text-sm underline"
+                >
+                    Back to sign in
+                </Link>
+            </div>
+        );
 
     return (
         <form

@@ -48,11 +48,20 @@ frontend/
 | `POST /users/auth/logout/` | JWT logout (clears cookie) |
 | `GET /users/auth/me/` | Current user |
 | `POST /users/auth/change-password/` | Change your own password |
-| `GET, POST /users/` | List/create panel users (system administrator only) |
+| `GET, POST /users/` | Administrator account management; staff can manage regular users only |
 | `GET, PUT, PATCH, DELETE /users/<id>/` | Retrieve/update/delete a panel user |
 | `POST /users/<id>/activate/` | Activate a panel user |
 | `POST /users/<id>/disable/` | Disable a panel user |
 | `POST /users/<id>/reset-password/` | Administrator password reset |
+| `POST /users/<id>/send-reset-link/` | Send a reset link to an active account's saved email |
+| `GET /api/admin/public-settings/` | Public branding, notices, support contact and registration availability |
+| `GET /api/admin/overview/` | Aggregate workspace statistics; no private task content |
+| `GET /api/admin/health/` | Database, cache, SMTP, disk and published backup status |
+| `GET, PATCH /api/admin/settings/` | Workspace settings; only superusers may write |
+| `GET /api/admin/activity/` | Paginated administrator and sign-in audit trail |
+| `GET /api/admin/emails/` | Email acceptance/failure metadata, never message bodies or tokens |
+| `GET /api/admin/email-templates/` | Administrator-only rendered email previews with sample data |
+| `GET /api/admin/errors/` | Sanitized server error categories |
 | `GET, POST /api/projects/` | List/create your projects |
 | `GET, PUT, PATCH, DELETE /api/projects/<id>/` | Manage your project |
 | `GET, POST /api/tasks/` | List/create your tasks |
@@ -64,6 +73,43 @@ frontend/
 | `GET, PUT, PATCH, DELETE /api/tasks/<task_id>/subtasks/<id>/` | Manage a checklist item |
 | `POST /api/tasks/<task_id>/subtasks/reorder/` | Atomically reorder a task's complete checklist |
 | `GET /api/weather/` | Public, rate-limited IP-localized weather and day/night state |
+
+### Administration
+
+Administrators land on `/admin` after signing in. The Administration navigation
+provides Overview, People, Activity, Services, Email, Email templates, Errors and Settings.
+Email templates has sandboxed desktop/mobile HTML previews and plain text using
+the actual outgoing template files with fictional data; previewing sends no mail.
+Administration tab content and its active indicator slide between selections,
+respecting reduced-motion preferences.
+`staff` accounts can manage regular users but cannot inspect or modify other
+administrators, assign privileged roles, or change workspace-wide settings.
+`superuser` accounts can manage administrators and workspace settings. Self-disable,
+self-deletion, self-role changes and removing the last active superuser are
+blocked in the backend, including direct PATCH requests. Task/project ownership
+remains unchanged: administrators cannot read anyone else's task contents.
+
+Create a system administrator with `python backend/manage.py createsuperuser`
+or `docker compose exec backend python manage.py createsuperuser`. No default
+admin password is shipped in the repository. Use the generated local account
+only in development; create separate accounts with strong passwords in production.
+
+Public settings control the application name, support email, registration and
+workspace/maintenance notices. Maintenance notices announce work; they do not
+take the service offline. Disabling registration blocks new challenges while
+allowing already-issued challenges to finish. Password recovery remains available.
+
+Audit records start when this feature is installed. They record account/security
+actions and validated client IPs, not passwords, OTPs, reset links, or email
+bodies. Email acceptance is not inbox-delivery confirmation. Production errors
+are recorded as logger names and exception categories; full diagnostics stay in
+restricted server logs. Apply an appropriate retention/privacy policy to these
+operational records. Login requests are throttled by validated client IP.
+
+Trash retention defaults to `0` (keep indefinitely). Preview eligible cleanup
+with `python backend/manage.py clean_trash`; use `--apply` only when permanent
+deletion is intended. The production daily backup/cleanup timer and backup-status
+publication are described in `docker/production/README.md`.
 
 ### Sign up and email verification
 
@@ -89,10 +135,10 @@ its environment. Run `docker compose exec backend python manage.py migrate`
 when deploying the new user fields and verification table.
 
 Registration/resends are additionally limited to five requests/minute and twenty
-requests/hour per socket IP; verification is limited to thirty requests/minute.
+requests/hour per validated client IP; verification is limited to thirty requests/minute.
 These DRF limits use Django's cache: configure a shared cache for multi-worker
-deployments. Behind a proxy, socket-IP limits apply to the proxy rather than
-trusting arbitrary forwarded headers. Expired challenges are cleaned up on new
+deployments. Behind a proxy, client forwarding headers are accepted only from
+the explicitly configured trusted proxies. Expired challenges are cleaned up on new
 registration requests. Successful verification creates a normal user and their
 first project atomically, then sets the same HTTP-only login cookie as Sign in.
 
@@ -127,7 +173,50 @@ pretend the backend's public IP is the visitor's location. The shared frontend
 Rain, drizzle, snow, sleet, clouds, fog, wind, and storm/hazard icons take priority
 over clear day/night symbols, so night rain still shows rain.
 
+## Personal account settings
+
+`/settings` supports profile editing (display name, optimized WebP avatar, personal
+space name and north star), account-synced preferences, task defaults, Persian or
+Gregorian calendars, week start, 12/24-hour time and IANA time zones. Preferences
+are cached locally, saved as partial account updates, and refreshed on focus and
+every minute. Failed writes retain local changes and offer a retry. Account
+switches do not transfer another user's preferences.
+
+The authenticated APIs are `PATCH /users/auth/profile/`,
+`GET, PATCH /users/auth/preferences/`, `GET, DELETE /users/auth/sessions/` and
+`DELETE /users/auth/sessions/<uuid>/`. Deleting the sessions collection signs out
+other sessions but preserves the current one. Individual revocations take effect
+on the next authenticated request. Existing JWT sessions are registered when
+they next make an authenticated request. Password changes and administrative
+password resets revoke recorded sessions.
+
+Browser reminders require per-device permission, HTTPS (or localhost), and an
+open application tab; background throttling can delay delivery. They honor the
+selected time zone, reminder lead time and quiet hours. Tasks without a due time
+use 09:00. Reminders suppressed during quiet hours are not replayed. Notification
+permissions stay device-local, even though reminder preferences sync. No Push
+service or closed-app notification delivery is provided. Calendar selection
+changes presentation and picking, not the underlying ISO task dates.
+
+Apply `users.0004_user_avatar_user_preferences_accountsession` and install the
+updated backend dependencies before serving these settings.
+
 ## Projects, tasks, and subtasks
+
+Project API creation requires a `key` of 2–4 uppercase ASCII letters, unique per
+owner, such as `FLOW` or `QA`. The project form uppercases input automatically.
+Internal onboarding/seed creation assigns a key when none is supplied. Migration
+`core.0004_project_keys_task_numbers` assigns keys and chronological task numbers
+to existing data without changing UUIDs or titles.
+
+Tasks expose read-only `number` and `identifier` fields, such as `FLOW-12`.
+Numbers are allocated under a project-row lock, increase monotonically, and are
+not reused after deletion. Restoring a trashed task keeps its number. Moving a
+task to another project allocates a new number in the destination; changing a
+project key changes the displayed prefix of its existing tasks. Search supports
+these identifiers. Project/task editors retain their original visual design;
+project details include inline deletion confirmation. Projects containing any tasks,
+including Trash, remain protected from deletion.
 
 All three models use UUID primary keys and creation/update timestamps.
 The relationship is `User → Project → Task → SubTask`: projects belong to a

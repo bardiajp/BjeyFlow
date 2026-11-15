@@ -58,7 +58,7 @@ THIRD_PARTY_APPS = [
     "rest_framework_simplejwt",
 ]
 
-LOCAL_APPS = ["users", "core"]
+LOCAL_APPS = ["users", "core", "administration"]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -114,19 +114,28 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage" if DEBUG else "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
+        if DEBUG
+        else "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
-CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:5174", "http://127.0.0.1:5174"])
+CORS_ALLOWED_ORIGINS = env.list(
+    "CORS_ALLOWED_ORIGINS", default=["http://localhost:5174", "http://127.0.0.1:5174"]
+)
 CORS_ALLOW_CREDENTIALS = True
 
 REDIS_URL = env("REDIS_URL", default="")
 if REDIS_URL:
-    CACHES = {"default": {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": REDIS_URL}}
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+        }
+    }
 
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
@@ -192,6 +201,21 @@ REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {
 }
 JWT_COOKIE_NAME = "bf_access"
 JWT_COOKIE_SECURE = not DEBUG
+APP_URL = env(
+    "APP_URL", default="http://localhost:5174" if DEBUG else "https://bjeyflow.space"
+).rstrip("/")
+PASSWORD_RESET_TIMEOUT = 1800
+BACKUP_STATUS_FILE = env("BACKUP_STATUS_FILE", default="")
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update(
+    {
+        "password_reset": "5/hour",
+        "password_reset_confirm": "20/min",
+        "admin_health": "10/min",
+        "admin_email": "30/hour",
+        "login": "10/min",
+        "login_hourly": "100/hour",
+    }
+)
 
 EMAIL_BACKEND = env(
     "EMAIL_BACKEND",
@@ -212,6 +236,7 @@ SIGNUP_RESEND_SECONDS = 60
 SIGNUP_MAX_ATTEMPTS = 5
 
 SIMPLE_JWT = {
+    "CHECK_REVOKE_TOKEN": True,
     "ACCESS_TOKEN_LIFETIME": timedelta(seconds=JWT_ACCESS_TOKEN_LIFETIME_SECONDS),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
@@ -220,4 +245,17 @@ SIMPLE_JWT = {
     "ALGORITHM": "HS256",
     "AUTH_HEADER_TYPES": ("Bearer",),
     "TOKEN_OBTAIN_SERIALIZER": "users.serializers.auth.LoginSerializer",
+}
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+        "admin_events": {
+            "class": "administration.logging.AdministrationErrorHandler",
+            "level": "ERROR",
+        },
+    },
+    "root": {"handlers": ["console", "admin_events"], "level": "WARNING"},
 }

@@ -6,6 +6,7 @@ from core.services.task import task_service
 
 
 class TaskSerializer(serializers.ModelSerializer):
+    identifier = serializers.CharField(read_only=True)
     project = serializers.PrimaryKeyRelatedField(
         queryset=Project.objects.none(), pk_field=serializers.UUIDField()
     )
@@ -23,6 +24,8 @@ class TaskSerializer(serializers.ModelSerializer):
             "project_name",
             "project_icon",
             "title",
+            "number",
+            "identifier",
             "description",
             "status",
             "priority",
@@ -30,13 +33,22 @@ class TaskSerializer(serializers.ModelSerializer):
             "due_time",
             "position",
             "completed_at",
+            "deleted_at",
             "subtasks",
             "subtasks_count",
             "completed_subtasks_count",
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "completed_at", "created_at", "updated_at")
+        read_only_fields = (
+            "id",
+            "number",
+            "identifier",
+            "completed_at",
+            "deleted_at",
+            "created_at",
+            "updated_at",
+        )
 
     def get_fields(self):
         fields = super().get_fields()

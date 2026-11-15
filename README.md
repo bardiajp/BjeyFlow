@@ -14,14 +14,24 @@ Production Docker/Nginx/TLS/mail deployment is documented in
 
 ## Repository layout
 
+The web application in `frontend/` is the shared UI starting point for web/PWA,
+desktop and Android. Platform-specific projects have separate homes under
+`apps/`; those directories are placeholders, not runnable apps yet. PWA
+installation and offline support have not been implemented. The current backend,
+frontend and production deployment paths remain unchanged.
+
 ```
+apps/
+  desktop/   Reserved for the desktop application
+  android/   Reserved for the Android application
+
 backend/
   config/    Django settings, URLs, WSGI/ASGI
   core/      Core app for tasks and other entities (ready for viewsets)
   users/     User model, auth, permissions, serializers, services, viewsets
   requirements/  base.txt, dev.txt
 
-frontend/
+frontend/    Web application and shared UI starting point for all platforms
   src/
     app.tsx        React router entry
     app/users/     User feature: api/, types/, schema/, components/, page.tsx, login.tsx

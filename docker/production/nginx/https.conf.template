@@ -65,6 +65,15 @@ server {
         try_files $uri =404;
         expires 1y;
     }
+    location = /sw.js {
+        try_files $uri =404;
+        expires -1;
+    }
+    location = /manifest.webmanifest {
+        try_files $uri =404;
+        default_type application/manifest+json;
+        expires -1;
+    }
     location = /index.html {
         expires -1;
     }

@@ -100,8 +100,13 @@ task lists, project counts, and editing/reordering endpoints. Projects with
 tasks in Trash remain protected from deletion; restore or permanently remove
 those tasks first.
 
-The offline screen works once the app has loaded; it is not an offline/PWA
-installation and cannot load the application from scratch without a network.
+The web application is installable as a PWA. After a successful online visit,
+its service worker serves a static offline screen for navigation failures, even
+when launched without a connection. API responses and account data are never
+cached for offline use; task editing and synchronization require a connection.
+The service worker is registered in production builds on HTTPS or localhost,
+not by the development server. Updates activate after older app tabs close;
+increment the offline cache version when changing the cached offline files.
 
 The production stack is separate from the development Compose file. It runs
 Nginx with the Vite production build, non-root Gunicorn (two workers/two threads),

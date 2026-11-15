@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-cd /opt/bjeyflow
+cd "$(dirname "$0")/../.."
 umask 077
 mkdir -p deploy-data/backups
 backup="deploy-data/backups/postgres-$(date -u +%Y%m%dT%H%M%SZ).dump"

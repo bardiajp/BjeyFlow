@@ -11,19 +11,20 @@ release=${BASH_REMATCH[1]}
 exec 9>/run/lock/bjeyflow-deploy.lock
 flock -w 1200 9
 
-incoming=$(mktemp -d /opt/bjeyflow-incoming.XXXXXXXX)
+app_dir=/root/BjeyFlow
+incoming=$(mktemp -d /root/.bjeyflow-incoming.XXXXXXXX)
 trap 'rm -rf -- "$incoming"' EXIT
 tar --extract --gzip --no-same-owner --file=- --directory="$incoming"
 test -f "$incoming/compose.production.yml"
 test -f "$incoming/docker/production/Dockerfile-backend"
 test -f "$incoming/docker/production/Dockerfile-frontend"
 
-cd /opt/bjeyflow
+cd "$app_dir"
 sh docker/production/backup-database.sh
 rsync -r --delete \
     --exclude='.env' --exclude='.env.*' --exclude='deploy-data/' \
     --exclude='.git/' --exclude='node_modules/' --exclude='.venv/' \
-    "$incoming/" /opt/bjeyflow/
+    "$incoming/" "$app_dir/"
 
 export RELEASE_TAG=$release
 compose=(docker compose --env-file .env.production -f compose.production.yml)
@@ -32,6 +33,7 @@ compose=(docker compose --env-file .env.production -f compose.production.yml)
 sed -i "s/^RELEASE_TAG=.*/RELEASE_TAG=$release/" .env.production
 "${compose[@]}" up -d --no-deps --wait --wait-timeout 180 backend
 "${compose[@]}" up -d --no-deps --force-recreate --wait --wait-timeout 120 web
+"${compose[@]}" exec -T backend python manage.py migrate --check
 "${compose[@]}" exec -T backend python manage.py check --deploy
 curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors https://bjeyflow.space/healthz/
 printf '%s\n' "$release" > deploy-data/deployed-commit

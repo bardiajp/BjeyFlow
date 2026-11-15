@@ -18,18 +18,47 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: bjeyflow_ci
+          POSTGRES_USER: bjeyflow_ci
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bjeyflow_ci -d bjeyflow_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - name: Build frontend
         run: docker build -f docker/production/Dockerfile-frontend -t bjeyflow/web:ci .
+      - name: Check public asset permissions
+        run: |
+          docker run --rm --entrypoint sh bjeyflow/web:ci -c \
+            'find /usr/share/nginx/html -type d ! -perm -005 -print -quit | grep -q . && exit 1; find /usr/share/nginx/html -type f ! -perm -004 -print -quit | grep -q . && exit 1; exit 0'
       - name: Build backend
         run: docker build -f docker/production/Dockerfile-backend -t bjeyflow/backend:ci .
-      - name: Check Django production configuration
-        run: >-
-          docker run --rm --entrypoint python
-          -e DEBUG=False
-          -e DJANGO_SECRET_KEY=ci-only-configuration-check-not-a-production-secret-key
-          bjeyflow/backend:ci manage.py check --deploy
+      - name: Check Django and database migrations
+        run: |
+          django() {
+            docker run --rm --network host --entrypoint python \
+              -e DEBUG=False \
+              -e DJANGO_SECRET_KEY=ci-only-configuration-check-not-a-production-secret-key \
+              -e POSTGRES_HOST=127.0.0.1 \
+              -e POSTGRES_PORT=5432 \
+              -e POSTGRES_DB=bjeyflow_ci \
+              -e POSTGRES_USER=bjeyflow_ci \
+              -e POSTGRES_PASSWORD=ci-only-password \
+              bjeyflow/backend:ci manage.py "$@"
+          }
+          django check --deploy
+          django makemigrations --check --dry-run
+          django migrate --noinput
+          django migrate --check
 
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -59,7 +88,11 @@ jobs:
             -o ServerAliveCountMax=4 \
             root@94.184.25.40 "deploy $GITHUB_SHA"
       - name: Verify public health
-        run: curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors https://bjeyflow.space/healthz/
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors https://bjeyflow.space/healthz/
+          for asset in app-loading.js app-loading.css images/ball.svg; do
+            curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors -o /dev/null "https://bjeyflow.space/$asset"
+          done
       - name: Remove SSH credentials
         if: always()
         run: rm -f ~/.ssh/deploy_key ~/.ssh/known_hosts

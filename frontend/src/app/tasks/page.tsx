@@ -128,8 +128,8 @@ export default function TasksPage({ view }: { view: TaskView }) {
 
     return (
         <div>
-            <div className="surface-hero border-primary/20 relative mb-6 overflow-hidden rounded-[24px] border p-5 sm:p-7">
-                <div className="mb-5 flex items-center gap-2.5 text-xs font-medium text-slate-500">
+            <div className="surface-hero border-primary/20 relative mb-4 overflow-hidden rounded-2xl border p-4 sm:mb-6 sm:rounded-[24px] sm:p-7">
+                <div className="mb-3 flex items-center gap-2.5 text-xs font-medium text-slate-500 sm:mb-5">
                     <span className="flex size-8 items-center justify-center rounded-xl border border-white bg-white/70">
                         <WeatherIcon size={18} className="text-secondary" strokeWidth={1.5} />
                     </span>
@@ -141,12 +141,12 @@ export default function TasksPage({ view }: { view: TaskView }) {
                         })}
                     </span>
                 </div>
-                <div className="flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
+                <div className="flex flex-col justify-between gap-4 sm:gap-6 xl:flex-row xl:items-end">
                     <div className="min-w-0">
-                        <h1 className="text-primary-foreground max-w-3xl text-[26px] leading-[1.15] font-semibold tracking-[-0.04em] lg:text-[32px] 2xl:text-[38px]">
+                        <h1 className="text-primary-foreground max-w-3xl text-[21px] leading-[1.2] font-semibold tracking-[-0.04em] sm:text-[26px] lg:text-[32px] 2xl:text-[38px]">
                             <AccentTitle>{title}</AccentTitle>
                         </h1>
-                        <p className="mt-3 max-w-xl text-[13px] leading-relaxed text-slate-500 sm:text-sm">
+                        <p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-500 sm:mt-3 sm:text-sm">
                             {overview.tasks.isPending
                                 ? 'Finding a little focus for your day…'
                                 : description}
@@ -162,7 +162,7 @@ export default function TasksPage({ view }: { view: TaskView }) {
                             </Button>
                         )}
                     </div>
-                    <div className="w-full shrink-0 rounded-2xl border border-white bg-white/75 p-4 shadow-[0_3px_12px_-8px_#02304730] sm:w-60 xl:w-64">
+                    <div className="w-full shrink-0 rounded-xl border border-white bg-white/75 p-3 shadow-[0_3px_12px_-8px_#02304730] sm:w-60 sm:rounded-2xl sm:p-4 xl:w-64">
                         <div className="mb-3 flex justify-between gap-3 text-xs text-slate-500">
                             <span>Your daily progress</span>
                             <span className="text-primary-foreground font-semibold tabular-nums">
@@ -180,14 +180,14 @@ export default function TasksPage({ view }: { view: TaskView }) {
             </div>
             <div
                 className={cn(
-                    'grid items-start gap-5 2xl:gap-6',
+                    'grid items-start gap-3 sm:gap-5 2xl:gap-6',
                     mode === 'list'
                         ? 'xl:grid-cols-[minmax(0,1fr)_280px] 2xl:grid-cols-[minmax(0,1fr)_310px]'
                         : 'grid-cols-1'
                 )}
             >
                 <section
-                    className="min-w-0 rounded-[22px] border border-slate-200/80 bg-white p-3 shadow-[0_4px_24px_-16px_#02304720] sm:p-5"
+                    className="min-w-0 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-[0_4px_24px_-16px_#02304720] sm:rounded-[22px] sm:p-5"
                     aria-label="Tasks"
                 >
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">

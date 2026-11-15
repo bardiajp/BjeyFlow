@@ -42,7 +42,7 @@ export function AppSidebar({
         <aside
             data-collapsed={collapsed}
             className={cn(
-                'app-sidebar surface-sidebar flex h-dvh flex-col overflow-hidden border-r border-slate-200/70 pt-7 pb-4 transition-[padding] duration-700 ease-in-out motion-reduce:transition-none',
+                'app-sidebar surface-sidebar flex h-full min-h-0 flex-col overflow-hidden border-r border-slate-200/70 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] transition-[padding] duration-700 ease-in-out motion-reduce:transition-none lg:pt-7 lg:pb-4',
                 collapsed ? 'px-3' : 'px-4'
             )}
             aria-label="Primary navigation"

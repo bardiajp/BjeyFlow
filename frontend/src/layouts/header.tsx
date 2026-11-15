@@ -37,7 +37,7 @@ export function AppHeader({
 }) {
     const navigate = useNavigate();
     return (
-        <header className="surface-wash border-input sticky top-3 z-30 mx-4 mt-4 flex min-h-20 flex-wrap items-center justify-between gap-4 rounded-[22px] border px-4 py-3.5 shadow-[0_4px_24px_-12px_#02304725] backdrop-blur-xl sm:mx-6 lg:mx-7 xl:mx-8">
+        <header className="surface-wash border-input sticky top-[max(0.5rem,env(safe-area-inset-top))] z-30 mx-3 mt-[max(0.75rem,env(safe-area-inset-top))] flex min-h-0 flex-wrap items-center justify-between gap-2 rounded-2xl border px-3 py-2 shadow-[0_4px_24px_-12px_#02304725] backdrop-blur-xl sm:top-3 sm:mx-6 sm:mt-4 sm:min-h-20 sm:gap-4 sm:rounded-[22px] sm:px-4 sm:py-3.5 lg:mx-7 xl:mx-8">
             <TopbarWater />
             <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                 <Button

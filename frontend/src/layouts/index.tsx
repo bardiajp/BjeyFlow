@@ -172,7 +172,7 @@ export default function Layout() {
                         today={today}
                         onOpenTask={openTask}
                     />
-                    <main className="flex min-h-0 min-w-0 flex-1 flex-col px-4 pt-6 pb-6 sm:px-6 lg:px-7 xl:px-8">
+                    <main className="flex min-h-0 min-w-0 flex-1 flex-col px-3 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 sm:pt-6 sm:pb-6 lg:px-7 xl:px-8">
                         <PageTransition
                             key={
                                 location.pathname.startsWith('/admin')
@@ -186,7 +186,7 @@ export default function Layout() {
                     </main>
                 </div>
                 <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
-                    <DialogContent className="top-0 left-0 h-dvh w-72 max-w-[85vw] translate-x-0 translate-y-0 rounded-none p-0 transition-transform duration-500 ease-in-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full motion-reduce:transition-none sm:max-w-72">
+                    <DialogContent className="top-0 left-0 block h-dvh max-h-dvh w-72 max-w-[85vw] translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none p-0 transition-transform duration-500 ease-in-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full motion-reduce:transition-none sm:max-w-72">
                         <DialogTitle className="sr-only">Navigation</DialogTitle>
                         {sidebar()}
                     </DialogContent>

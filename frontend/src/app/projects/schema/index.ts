@@ -2,6 +2,11 @@ import { z } from 'zod';
 
 export const projectSchema = z.object({
     name: z.string().trim().min(1, 'Give your project a name.').max(150),
+    key: z
+        .string()
+        .trim()
+        .toUpperCase()
+        .regex(/^[A-Z]{2,4}$/, 'Use 2–4 uppercase letters, such as FLOW.'),
     description: z.string().trim(),
     color: z
         .string()

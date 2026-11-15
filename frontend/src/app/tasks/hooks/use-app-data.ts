@@ -8,6 +8,7 @@ export function useAppData() {
         queryKey: ['tasks', 'all'],
         queryFn: () => listTasks(),
         staleTime: 30_000,
+        refetchInterval: 60_000,
     });
     return { projects, tasks };
 }

@@ -28,7 +28,7 @@ export function NavItem({
     return (
         <NavLink
             to={to}
-            end={to !== '/settings'}
+            end={to !== '/settings' && to !== '/admin'}
             onClick={onNavigate}
             aria-label={collapsed ? label : undefined}
             title={collapsed ? label : undefined}

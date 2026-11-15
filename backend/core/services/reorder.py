@@ -10,7 +10,9 @@ from core.services.task import task_service
 @transaction.atomic
 def reorder_subtasks(owner, task_id, ids):
     task = get_object_or_404(
-        Task.objects.select_for_update(of=("self",)).filter(project__owner=owner),
+        Task.objects.select_for_update(of=("self",)).filter(
+            project__owner=owner, deleted_at__isnull=True
+        ),
         pk=task_id,
     )
     items = list(task.subtasks.select_for_update().order_by("pk"))
@@ -32,7 +34,11 @@ def reorder_subtasks(owner, task_id, ids):
 def reorder_tasks(owner, items):
     tasks = list(
         Task.objects.select_for_update(of=("self",))
-        .filter(project__owner=owner, pk__in=[item["id"] for item in items])
+        .filter(
+            project__owner=owner,
+            deleted_at__isnull=True,
+            pk__in=[item["id"] for item in items],
+        )
         .order_by("pk")
     )
     if len(tasks) != len(items):

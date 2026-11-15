@@ -6,7 +6,6 @@ from smtplib import SMTPException
 
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
-from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -20,6 +19,9 @@ from rest_framework.views import APIView
 
 from core.models import Project
 from core.utils.ip import get_ip
+from administration.models import SiteSettings, EmailEvent
+from administration.audit import record_event
+from users.services.email import send_account_email
 from users.models import SignupChallenge, User
 from users.serializers.auth import (
     SignupResendSerializer,
@@ -70,12 +72,11 @@ def issue_code(challenge):
         "expiry_minutes": math.ceil(settings.SIGNUP_CODE_LIFETIME_SECONDS / 60),
     }
     try:
-        send_mail(
+        send_account_email(
+            "signup",
             "Your BjeyFlow verification code",
             render_to_string("users/emails/verification.txt", email_context),
-            settings.DEFAULT_FROM_EMAIL,
-            [challenge.email],
-            fail_silently=False,
+            challenge.email,
             html_message=render_to_string(
                 "users/emails/verification.html", email_context
             ),
@@ -117,6 +118,10 @@ class SignupView(APIView):
     throttle_classes = [SignupBurstThrottle, SignupHourlyThrottle]
 
     def post(self, request):
+        if not SiteSettings.load().signup_enabled:
+            raise ValidationError(
+                {"detail": "New registrations are temporarily paused."}
+            )
         serializer = SignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -148,6 +153,15 @@ class SignupView(APIView):
                     },
                 )
                 issue_code(challenge)
+        except EmailDeliveryError as exc:
+            EmailEvent.objects.create(
+                kind="signup",
+                recipient=data["email"],
+                status="failed",
+                backend=settings.EMAIL_BACKEND,
+                error_type=type(exc.__cause__).__name__,
+            )
+            raise
         except IntegrityError as exc:
             raise ValidationError(
                 {
@@ -165,13 +179,23 @@ class SignupResendView(APIView):
     def post(self, request):
         serializer = SignupResendSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        with transaction.atomic():
-            challenge = get_object_or_404(
-                SignupChallenge.objects.select_for_update(),
-                pk=serializer.validated_data["challenge_id"],
+        try:
+            with transaction.atomic():
+                challenge = get_object_or_404(
+                    SignupChallenge.objects.select_for_update(),
+                    pk=serializer.validated_data["challenge_id"],
+                )
+                check_cooldown(challenge)
+                issue_code(challenge)
+        except EmailDeliveryError as exc:
+            EmailEvent.objects.create(
+                kind="signup",
+                recipient=challenge.email,
+                status="failed",
+                backend=settings.EMAIL_BACKEND,
+                error_type=type(exc.__cause__).__name__,
             )
-            check_cooldown(challenge)
-            issue_code(challenge)
+            raise
         return Response(challenge_response(challenge))
 
 
@@ -222,6 +246,7 @@ class SignupVerifyView(APIView):
                         owner=user, name=workspace_name, icon="folder"
                     )
                     challenge.delete()
+                    record_event("user.registered", actor=user, request=request)
         except IntegrityError as exc:
             raise ValidationError(
                 {
@@ -232,4 +257,4 @@ class SignupVerifyView(APIView):
             raise ValidationError(
                 {"code": "That code does not match. Check your email and try again."}
             )
-        return authenticated_response(user)
+        return authenticated_response(user, request)

@@ -17,12 +17,16 @@ class TaskFilterForm(forms.Form):
 
 
 class TaskFilter(django_filters.FilterSet):
+    hide_completed = django_filters.BooleanFilter(method="filter_completed")
     project = django_filters.UUIDFilter(field_name="project_id")
     due_date = django_filters.DateFilter()
     due_date_after = django_filters.DateFilter(field_name="due_date", lookup_expr="gte")
     due_date_before = django_filters.DateFilter(
         field_name="due_date", lookup_expr="lte"
     )
+
+    def filter_completed(self, queryset, name, value):
+        return queryset.exclude(status=Task.Status.COMPLETED) if value else queryset
 
     class Meta:
         model = Task

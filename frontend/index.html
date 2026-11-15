@@ -1,12 +1,41 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BjeyFlow</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>BjeyFlow</title>
+        <script src="/app-loading.js"></script>
+        <link rel="preload" href="/images/ball.svg" as="image" type="image/svg+xml" />
+        <link rel="stylesheet" href="/app-loading.css" />
+    </head>
+    <body>
+        <div id="root"></div>
+        <section
+            id="app-loading"
+            class="app-loading"
+            role="status"
+            aria-live="polite"
+            aria-label="Loading your workspace"
+        >
+            <div class="app-loading-art" aria-hidden="true">
+                <span class="app-loading-orbit"></span>
+                <span class="app-loading-ring"></span>
+                <img class="app-loading-orb" src="/images/ball.svg" alt="" width="88" height="88" />
+            </div>
+            <p class="app-loading-eyebrow">A LITTLE MORE FLOW</p>
+            <h1 class="app-loading-brand">BjeyFlow<span class="app-loading-dot">.</span></h1>
+            <p class="app-loading-message">Getting your space ready. Take a little breath.</p>
+            <div class="app-loading-track" aria-hidden="true"><span></span></div>
+            <p class="app-loading-footer">Less noise. More focus.</p>
+        </section>
+        <noscript
+            ><section class="app-loading">
+                <h1 class="app-loading-brand">
+                    JavaScript is needed<span class="app-loading-dot">.</span>
+                </h1>
+                <p class="app-loading-message">Enable JavaScript to open your workspace.</p>
+            </section></noscript
+        >
+        <script type="module" src="/src/main.tsx"></script>
+    </body>
 </html>

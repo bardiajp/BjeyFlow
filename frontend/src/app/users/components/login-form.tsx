@@ -4,7 +4,6 @@ import { Controller, useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router';
 import { login } from '../api/login';
 import { loginSchema, type LoginFormValues } from '../schema';
-import AccountHelp from './account-help';
 import DisplayError from '@/components/display-error';
 import { LabeledInput } from '@/components/form/labeled';
 import { Button } from '@/components/ui/button';
@@ -37,7 +36,7 @@ export default function LoginForm() {
             queryClient.clear();
             queryClient.setQueryData(['status'], data);
             setUser(data.user);
-            navigate('/', { replace: true });
+            navigate(data.user.role === 'user' ? '/' : '/admin', { replace: true });
         },
     });
 
@@ -115,12 +114,12 @@ export default function LoginForm() {
                         Remember me
                     </label>
                 </div>
-                <AccountHelp
-                    topic="password"
+                <Link
+                    to="/forgot-password"
                     className="text-foreground focus-visible:ring-primary rounded text-[11px] font-medium outline-none hover:underline focus-visible:ring-2"
                 >
                     Forgot password?
-                </AccountHelp>
+                </Link>
             </div>
             <DisplayError error={mutation.error} />
             <Button

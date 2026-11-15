@@ -128,6 +128,9 @@ export function TaskRow({
                         </p>
                     )}
                     <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-400 sm:text-[11px]">
+                        <span className="text-muted-foreground font-mono text-[10px]">
+                            {task.identifier}
+                        </span>
                         <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100/70 px-1.5 py-0.5">
                             <ProjectIcon name={task.project_icon} size={13} />
                             <span>{task.project_name}</span>

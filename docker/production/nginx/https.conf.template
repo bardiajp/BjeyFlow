@@ -47,7 +47,7 @@ server {
         access_log off;
         include /etc/nginx/snippets/api-proxy.conf;
     }
-    location ~ ^/users/auth/(login|signup(?:/verify|/resend)?)/$ {
+    location ~ ^/users/auth/(login|signup(?:/verify|/resend)?|password-reset(?:/confirm)?)/$ {
         limit_req zone=auth burst=10 nodelay;
         limit_req_status 429;
         include /etc/nginx/snippets/api-proxy.conf;

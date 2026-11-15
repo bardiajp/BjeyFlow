@@ -31,8 +31,8 @@ export function TaskDetailDrawer({
         onSuccess: async () => {
             toast.add({
                 type: 'warning',
-                title: 'Task deleted',
-                description: 'The task and its subtasks have been removed.',
+                title: 'Moved to Trash',
+                description: 'You can restore this task and its subtasks from Trash.',
             });
             onClose();
             await invalidate();
@@ -57,7 +57,7 @@ export function TaskDetailDrawer({
                         <>
                             <EditorHeader
                                 title="A little more progress"
-                                description={`${task.project_name} · Shape the details of your next step.`}
+                                description={`${task.identifier} · ${task.project_name} · Shape the details of your next step.`}
                                 icon={
                                     task.status === 'completed' ? (
                                         <CircleCheck size={23} strokeWidth={1.5} />
@@ -93,7 +93,7 @@ export function TaskDetailDrawer({
                                             No longer needed?
                                         </p>
                                         <p className="mt-1 text-[9px] text-slate-400">
-                                            This removes the task and its small steps.
+                                            You can restore it and its small steps from Trash.
                                         </p>
                                     </div>
                                     <Button
@@ -104,7 +104,7 @@ export function TaskDetailDrawer({
                                         onClick={() => remove.mutate(task.id)}
                                     >
                                         <Trash2 size={14} className="text-secondary" />
-                                        Delete task
+                                        Move to Trash
                                     </Button>
                                 </div>
                             </TaskForm>

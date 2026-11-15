@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 
 from .base import BaseModel
@@ -20,6 +20,7 @@ class Task(BaseModel):
         "core.Project", on_delete=models.PROTECT, related_name="tasks"
     )
     title = models.CharField(max_length=255)
+    number = models.PositiveBigIntegerField(editable=False)
     description = models.TextField(blank=True)
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.TODO
@@ -31,6 +32,9 @@ class Task(BaseModel):
     due_time = models.TimeField(null=True, blank=True)
     position = models.PositiveIntegerField(default=0)
     completed_at = models.DateTimeField(null=True, blank=True, editable=False)
+    deleted_at = models.DateTimeField(
+        null=True, blank=True, editable=False, db_index=True
+    )
 
     class Meta:
         ordering = ["position", "created_at", "id"]
@@ -42,6 +46,12 @@ class Task(BaseModel):
             models.Index(fields=["completed_at"], name="task_completed_at_idx"),
         ]
         constraints = [
+            models.UniqueConstraint(
+                fields=["project", "number"], name="task_project_number_unique"
+            ),
+            models.CheckConstraint(
+                condition=Q(number__gt=0), name="task_number_positive"
+            ),
             models.CheckConstraint(
                 condition=Q(due_time__isnull=True) | Q(due_date__isnull=False),
                 name="task_due_time_requires_date",
@@ -57,3 +67,33 @@ class Task(BaseModel):
 
     def __str__(self):
         return self.title
+
+    @property
+    def identifier(self):
+        return f"{self.project.key}-{self.number}"
+
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        from .project import Project
+
+        update_fields = kwargs.get("update_fields")
+        check_move = (
+            update_fields is None
+            or "project" in update_fields
+            or "project_id" in update_fields
+        )
+        moved = (
+            not self._state.adding
+            and check_move
+            and Task.objects.filter(pk=self.pk)
+            .exclude(project_id=self.project_id)
+            .exists()
+        )
+        if self._state.adding or moved:
+            project = Project.objects.select_for_update().get(pk=self.project_id)
+            project.task_sequence += 1
+            project.save(update_fields=["task_sequence"])
+            self.number = project.task_sequence
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | {"number"}
+        super().save(*args, **kwargs)

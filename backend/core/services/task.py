@@ -46,7 +46,9 @@ class TaskService:
     @transaction.atomic
     def update_task(self, owner, instance, validated_data):
         instance = get_object_or_404(
-            Task.objects.select_for_update().filter(project__owner=owner),
+            Task.objects.select_for_update().filter(
+                project__owner=owner, deleted_at__isnull=True
+            ),
             pk=instance.pk,
         )
         data = validated_data.copy()

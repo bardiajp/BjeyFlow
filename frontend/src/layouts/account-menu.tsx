@@ -1,21 +1,12 @@
 import { Menu } from '@base-ui/react/menu';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-    ArrowUpRight,
-    ChevronDown,
-    ChevronRight,
-    CircleHelp,
-    LogOut,
-    SlidersHorizontal,
-    Waves,
-} from 'lucide-react';
+import { ArrowUpRight, ChevronDown, LogOut, SlidersHorizontal, Waves } from 'lucide-react';
 import { Link } from 'react-router';
 import { logout } from '@/app/users/api/logout';
 import DisplayError from '@/components/display-error';
 import { toast } from '@/components/ui/toast';
 import useUserStore from '@/store/use-user-store';
 import { cn } from '@/lib/utils';
-import { HelpContent } from './help';
 
 export function AccountMenu({
     name,
@@ -30,6 +21,7 @@ export function AccountMenu({
 }) {
     const queryClient = useQueryClient();
     const clearUser = useUserStore((state) => state.clearUser);
+    const user = useUserStore((state) => state.user);
     const mutation = useMutation({
         mutationFn: logout,
         onSuccess: () => {
@@ -54,14 +46,22 @@ export function AccountMenu({
                     )}
                 >
                     <span className="bg-brand text-primary flex size-9 shrink-0 items-center justify-center rounded-xl text-xs font-semibold">
-                        {initials}
+                        {user?.avatar ? (
+                            <img
+                                src={user.avatar}
+                                alt=""
+                                className="size-full rounded-xl object-cover"
+                            />
+                        ) : (
+                            initials
+                        )}
                     </span>
                     <span className="sidebar-copy min-w-0 flex-1 pr-4 whitespace-nowrap">
                         <span className="text-primary-foreground block truncate text-xs font-semibold">
                             {name}
                         </span>
                         <span className="mt-0.5 block text-[10px] text-slate-400">
-                            Your personal space
+                            {user?.flow_name || 'Your personal space'}
                         </span>
                     </span>
                     <ChevronDown
@@ -73,7 +73,7 @@ export function AccountMenu({
                 </Menu.Trigger>
                 <Menu.Portal>
                     <Menu.Positioner side="top" align="start" sideOffset={8} className="z-50">
-                        <Menu.Popup className="bg-popover text-popover-foreground border-input w-(--anchor-width) max-w-[calc(100vw-2rem)] min-w-64 overflow-hidden rounded-[22px] border shadow-xl [clip-path:inset(0_0_0_0_round_22px)] transition-[clip-path,translate] duration-500 ease-in-out outline-none data-ending-style:translate-y-4 data-ending-style:[clip-path:inset(100%_0_0_0_round_22px)] data-starting-style:translate-y-4 data-starting-style:[clip-path:inset(100%_0_0_0_round_22px)] motion-reduce:transition-none">
+                        <Menu.Popup className="bg-popover text-popover-foreground border-input w-(--anchor-width) max-w-[calc(100vw-2rem)] min-w-64 overflow-hidden rounded-[22px] border shadow-xl transition-[clip-path,translate] duration-500 ease-in-out outline-none [clip-path:inset(0_0_0_0_round_22px)] data-ending-style:translate-y-4 data-ending-style:[clip-path:inset(100%_0_0_0_round_22px)] data-starting-style:translate-y-4 data-starting-style:[clip-path:inset(100%_0_0_0_round_22px)] motion-reduce:transition-none">
                             <div className="surface-wash border-input border-b p-4">
                                 <span className="text-muted-foreground mb-3 flex items-center gap-1.5 text-[8px] font-semibold tracking-[0.14em]">
                                     <Waves size={12} />
@@ -105,31 +105,6 @@ export function AccountMenu({
                                     </span>
                                     <ArrowUpRight size={13} className="text-muted-foreground" />
                                 </Menu.Item>
-                                <Menu.SubmenuRoot>
-                                    <Menu.SubmenuTrigger
-                                        openOnHover
-                                        delay={150}
-                                        closeDelay={180}
-                                        className="data-highlighted:bg-accent data-highlighted:border-input flex cursor-pointer items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-xs outline-none"
-                                    >
-                                        <CircleHelp size={16} />
-                                        <span className="flex-1">Help & shortcuts</span>
-                                        <ChevronRight size={13} className="text-muted-foreground" />
-                                    </Menu.SubmenuTrigger>
-                                    <Menu.Portal>
-                                        <Menu.Positioner
-                                            side="right"
-                                            align="end"
-                                            sideOffset={10}
-                                            collisionPadding={16}
-                                            className="z-[60]"
-                                        >
-                                            <Menu.Popup className="flow-popover w-80 max-w-[calc(100vw-2rem)] overflow-hidden outline-none">
-                                                <HelpContent />
-                                            </Menu.Popup>
-                                        </Menu.Positioner>
-                                    </Menu.Portal>
-                                </Menu.SubmenuRoot>
                                 <Menu.Item
                                     disabled={mutation.isPending}
                                     onClick={() => mutation.mutate()}

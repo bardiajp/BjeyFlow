@@ -2,7 +2,16 @@ import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Waves } from 'lucide-r
 import { useState } from 'react';
 import type { Task } from '../types';
 import { Button } from '@/components/ui/button';
-import { addDays, formatTime, localDate } from '@/lib/date';
+import {
+    addDays,
+    formatTime,
+    calendarMonthStart,
+    calendarParts,
+    formatCalendarDate,
+    shiftCalendarMonth,
+    weekLabels,
+} from '@/lib/date';
+import { usePreferences } from '@/store/use-preferences';
 import { cn } from '@/lib/utils';
 
 export function TaskCalendar({
@@ -15,14 +24,15 @@ export function TaskCalendar({
     onOpen: (id: string) => void;
 }) {
     const [selected, setSelected] = useState(today);
-    const [month, setMonth] = useState(() => new Date(`${today.slice(0, 7)}-01T12:00:00`));
-    const start = addDays(localDate(month), -((month.getDay() + 6) % 7));
+    const { weekStart, calendar } = usePreferences();
+    const [monthDay, setMonth] = useState(today);
+    const month = calendarMonthStart(monthDay);
+    const start = addDays(month, -((new Date(`${month}T12:00:00`).getDay() - weekStart + 7) % 7));
     const selectedTasks = tasks
         .filter((task) => task.due_date === selected)
         .sort((a, b) => (a.due_time ?? '').localeCompare(b.due_time ?? ''));
     const unscheduled = tasks.filter((task) => !task.due_date);
-    const shiftMonth = (offset: number) =>
-        setMonth(new Date(month.getFullYear(), month.getMonth() + offset, 1, 12));
+    const shiftMonth = (offset: number) => setMonth(shiftCalendarMonth(month, offset));
 
     return (
         <div className="grid min-w-0 gap-5 pt-2">
@@ -47,7 +57,7 @@ export function TaskCalendar({
                         className="h-8 rounded-xl px-3 text-[10px]"
                         onClick={() => {
                             setSelected(today);
-                            setMonth(new Date(`${today.slice(0, 7)}-01T12:00:00`));
+                            setMonth(today);
                         }}
                     >
                         Today
@@ -66,7 +76,7 @@ export function TaskCalendar({
                         aria-live="polite"
                         className="text-primary-foreground min-w-32 text-center text-xs font-medium"
                     >
-                        {month.toLocaleDateString([], { month: 'long', year: 'numeric' })}
+                        {formatCalendarDate(month, { month: 'long', year: 'numeric' })}
                     </span>
                     <Button
                         type="button"
@@ -82,7 +92,7 @@ export function TaskCalendar({
             </div>
             <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-200/70">
                 <div className="grid grid-cols-7 gap-px border-b border-slate-200/70 bg-slate-50">
-                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label) => (
+                    {weekLabels().map((label) => (
                         <div
                             key={label}
                             className="py-3 text-center text-[9px] font-medium tracking-wide text-slate-400"
@@ -94,9 +104,8 @@ export function TaskCalendar({
                 <div className="grid grid-cols-7 gap-px">
                     {Array.from({ length: 42 }, (_, index) => {
                         const day = addDays(start, index);
-                        const date = new Date(`${day}T12:00:00`);
                         const dayTasks = tasks.filter((task) => task.due_date === day);
-                        const outsideMonth = date.getMonth() !== month.getMonth();
+                        const outsideMonth = calendarMonthStart(day) !== month;
                         return (
                             <div
                                 key={day}
@@ -108,7 +117,7 @@ export function TaskCalendar({
                             >
                                 <button
                                     type="button"
-                                    aria-label={`${date.toLocaleDateString([], { dateStyle: 'full' })}, ${dayTasks.length} tasks`}
+                                    aria-label={`${formatCalendarDate(day, { dateStyle: 'full' })}, ${dayTasks.length} tasks`}
                                     aria-pressed={day === selected}
                                     aria-current={day === today ? 'date' : undefined}
                                     onClick={() => setSelected(day)}
@@ -126,7 +135,9 @@ export function TaskCalendar({
                                                 'bg-primary/30 text-primary-foreground'
                                         )}
                                     >
-                                        {date.getDate()}
+                                        {new Intl.NumberFormat(
+                                            calendar === 'persian' ? 'fa-IR' : 'en-US'
+                                        ).format(calendarParts(day).day)}
                                     </span>
                                     <span className="hidden pr-1 text-[9px] text-slate-400 tabular-nums sm:block">
                                         {dayTasks.length || ''}
@@ -157,7 +168,7 @@ export function TaskCalendar({
                                         <button
                                             key={task.id}
                                             type="button"
-                                            title={task.title}
+                                            title={`${task.identifier} · ${task.title}`}
                                             onClick={() => onOpen(task.id)}
                                             className={cn(
                                                 'flow-control border-primary/15 bg-primary/10 text-primary-foreground block w-full min-w-0 truncate rounded-md border px-1.5 py-1 text-left text-[9px]',
@@ -169,7 +180,7 @@ export function TaskCalendar({
                                                     'border-orange-100 bg-orange-50 text-orange-600'
                                             )}
                                         >
-                                            {task.title}
+                                            {task.identifier} · {task.title}
                                         </button>
                                     ))}
                                     {dayTasks.length > 2 && (
@@ -194,7 +205,7 @@ export function TaskCalendar({
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <h3 className="text-primary-foreground flex items-center gap-2 text-xs font-medium">
                         <CalendarDays size={15} />
-                        {new Date(`${selected}T12:00:00`).toLocaleDateString([], {
+                        {formatCalendarDate(selected, {
                             weekday: 'long',
                             month: 'long',
                             day: 'numeric',
@@ -221,7 +232,7 @@ export function TaskCalendar({
                                 />
                                 <span className="min-w-0 flex-1">
                                     <span className="text-primary-foreground block truncate text-xs font-medium">
-                                        {task.title}
+                                        {task.identifier} · {task.title}
                                     </span>
                                     <span className="mt-1 block truncate text-[9px] text-slate-400">
                                         {task.project_name}
@@ -259,7 +270,7 @@ export function TaskCalendar({
                                 onClick={() => onOpen(task.id)}
                                 className="flow-control max-w-full truncate rounded-xl border border-dashed border-slate-200 bg-white px-3 py-2 text-[10px] text-slate-500"
                             >
-                                {task.title}
+                                {task.identifier} · {task.title}
                             </button>
                         ))}
                         {unscheduled.length > 6 && (

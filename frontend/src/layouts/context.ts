@@ -6,6 +6,7 @@ export interface TaskLayoutContext {
     openTask: (id: string) => void;
     createTask: (projectId?: string) => void;
     createProject: () => void;
+    editProject: (id: string) => void;
 }
 
 export function useTaskLayout() {

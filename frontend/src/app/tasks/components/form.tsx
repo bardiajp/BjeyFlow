@@ -1,5 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
+import { usePreferences } from '@/store/use-preferences';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import {
     ArrowDownIcon,
     EqualIcon,
@@ -13,7 +15,8 @@ import {
     CircleDashed,
     Timer,
 } from 'lucide-react';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { ProjectIcon } from '@/app/projects/components/project-icon';
+import { cn } from '@/lib/utils';
 import type { Project } from '@/app/projects/types';
 import { createTask } from '../api/create';
 import { updateTask } from '../api/update';
@@ -26,12 +29,9 @@ import { LabeledSelect } from '@/components/form/labeled-select';
 import { LabeledTextarea } from '@/components/form/labeled-textarea';
 import { DatePicker } from '@/components/form/date-picker';
 import { TimePicker } from '@/components/form/time-picker';
-import { ProjectIcon } from '@/app/projects/components/project-icon';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';
-import { DialogFooter } from '@/components/ui/dialog';
 import { setValidationErrors } from '@/lib/form';
-import { cn } from '@/lib/utils';
 import { SubtaskChecklist } from './subtask-checklist';
 
 const priorityOptions = [
@@ -90,7 +90,7 @@ export function TaskForm({
             title: task?.title ?? '',
             project: task?.project ?? defaultProject,
             description: task?.description ?? '',
-            priority: task?.priority ?? 'normal',
+            priority: task?.priority ?? usePreferences.getState().defaultPriority,
             status: task?.status ?? 'todo',
             due_date: task?.due_date ?? defaultDate,
             due_time: task?.due_time?.slice(0, 5) ?? '',
@@ -120,22 +120,22 @@ export function TaskForm({
                       subtasks: subtasks.map((item, position) => ({ ...item, position })),
                   });
         },
-        onSuccess: async (_, values) => {
+        onSuccess: async (data) => {
             toast.add({
-                type: task ? 'info' : 'success',
-                title: task ? 'Task updated' : 'Task created successfully',
-                description: `“${values.title}” has been ${task ? 'updated' : 'added to your project'} successfully.`,
+                type: 'success',
+                title: task ? 'Task updated' : 'Task created',
+                description: `${data.identifier} · ${data.title}`,
             });
             await invalidate();
             onClose();
         },
     });
+
     return (
         <form
             className="editor-form grid gap-5"
             noValidate
             onSubmit={handleSubmit((values) => {
-                // Don't silently discard text if Create task is clicked before the +.
                 const parsed = taskSchema.safeParse(
                     !task && subtaskTitle.trim()
                         ? {
@@ -151,7 +151,7 @@ export function TaskForm({
                 if (!mutation.isPending) mutation.mutate(parsed.data);
             })}
         >
-            <fieldset className="grid gap-5" disabled={mutation.isPending}>
+            <fieldset disabled={mutation.isPending} className="grid min-w-0 gap-5">
                 <div className="grid gap-5 rounded-[22px] border border-slate-200/70 bg-white p-5 shadow-[0_3px_16px_-12px_#02304725]">
                     <div className="text-primary-foreground flex items-center gap-2 text-[10px] font-semibold tracking-[0.1em]">
                         <span className="bg-primary/15 flex size-7 items-center justify-center rounded-lg">
@@ -183,7 +183,7 @@ export function TaskForm({
                                 disabled={mutation.isPending}
                                 options={availableProjects.map((project) => ({
                                     value: project.id,
-                                    label: project.name,
+                                    label: `${project.key} · ${project.name}`,
                                     description: project.is_archived
                                         ? 'Archived project'
                                         : `${project.tasks_count} tasks`,
@@ -300,48 +300,44 @@ export function TaskForm({
                         )}
                     </fieldset>
                     {task && (
-                        <div className="grid gap-4">
-                            <Controller
-                                name="status"
-                                control={control}
-                                render={({ field: { onChange, ...field } }) => (
-                                    <LabeledSelect
-                                        {...field}
-                                        onValueChange={onChange}
-                                        label="Status"
-                                        error={errors.status?.message}
-                                        disabled={mutation.isPending}
-                                        options={[
-                                            {
-                                                value: 'todo',
-                                                label: 'To do',
-                                                description: 'A fresh place to start',
-                                                icon: <CircleDashed size={16} />,
-                                            },
-                                            {
-                                                value: 'in_progress',
-                                                label: 'In progress',
-                                                description: 'One thing at a time',
-                                                icon: (
-                                                    <Timer size={16} className="text-orange-500" />
-                                                ),
-                                            },
-                                            {
-                                                value: 'completed',
-                                                label: 'Completed',
-                                                description: 'Small wins, real progress',
-                                                icon: (
-                                                    <CircleCheck
-                                                        size={16}
-                                                        className="text-emerald-600"
-                                                    />
-                                                ),
-                                            },
-                                        ]}
-                                    />
-                                )}
-                            />
-                        </div>
+                        <Controller
+                            name="status"
+                            control={control}
+                            render={({ field: { onChange, ...field } }) => (
+                                <LabeledSelect
+                                    {...field}
+                                    onValueChange={onChange}
+                                    label="Status"
+                                    error={errors.status?.message}
+                                    disabled={mutation.isPending}
+                                    options={[
+                                        {
+                                            value: 'todo',
+                                            label: 'To do',
+                                            description: 'A fresh place to start',
+                                            icon: <CircleDashed size={16} />,
+                                        },
+                                        {
+                                            value: 'in_progress',
+                                            label: 'In progress',
+                                            description: 'One thing at a time',
+                                            icon: <Timer size={16} className="text-orange-500" />,
+                                        },
+                                        {
+                                            value: 'completed',
+                                            label: 'Completed',
+                                            description: 'Small wins, real progress',
+                                            icon: (
+                                                <CircleCheck
+                                                    size={16}
+                                                    className="text-emerald-600"
+                                                />
+                                            ),
+                                        },
+                                    ]}
+                                />
+                            )}
+                        />
                     )}
                 </div>
                 {!task && (
@@ -392,16 +388,16 @@ export function TaskForm({
             </fieldset>
             {children}
             <DisplayError error={mutation.error} />
-            <DialogFooter className="sticky -bottom-6 z-10 -mx-6 -mb-6 items-center gap-2 border-slate-200/80 bg-white/95 px-6 py-4 shadow-[0_-8px_24px_-16px_#02304730] backdrop-blur-xl sm:-bottom-8 sm:-mx-8 sm:-mb-8 sm:px-8">
+            <footer className="sticky -bottom-6 z-10 -mx-6 -mb-6 flex items-center justify-end gap-2 border-t border-slate-200/80 bg-white/95 px-6 py-4 shadow-[0_-8px_24px_-16px_#02304730] backdrop-blur-xl sm:-bottom-8 sm:-mx-8 sm:-mb-8 sm:px-8">
                 <span className="mr-auto hidden text-[10px] text-slate-400 sm:block">
                     A small step is still a step.
                 </span>
                 <Button
                     variant="cancel"
                     type="button"
-                    onClick={onClose}
-                    disabled={mutation.isPending}
                     className="h-10 rounded-xl border-slate-200 text-xs text-slate-500"
+                    disabled={mutation.isPending}
+                    onClick={onClose}
                 >
                     Cancel
                 </Button>
@@ -413,7 +409,7 @@ export function TaskForm({
                     {task ? 'Save changes' : 'Create task'}
                     <ArrowUpRight size={15} />
                 </Button>
-            </DialogFooter>
+            </footer>
         </form>
     );
 }

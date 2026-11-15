@@ -8,6 +8,7 @@ import {
     List,
     Plus,
     SlidersHorizontal,
+    Settings2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
@@ -28,7 +29,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { useTaskLayout } from '@/layouts/context';
-import { addDays } from '@/lib/date';
+import { addDays, formatCalendarDate, selectedTimeZone } from '@/lib/date';
 import { cn } from '@/lib/utils';
 import useUserStore from '@/store/use-user-store';
 import { WeatherIcon } from '@/components/weather-icon';
@@ -38,10 +39,12 @@ import { AccentTitle } from '@/components/accent-title';
 
 export default function TasksPage({ view }: { view: TaskView }) {
     const { projectId } = useParams();
-    const { today, search, openTask, createTask } = useTaskLayout();
+    const { today, search, openTask, createTask, editProject } = useTaskLayout();
     const user = useUserStore((state) => state.user);
     const overview = useAppData();
     const defaultView = usePreferences((state) => state.defaultView);
+    const taskOrdering = usePreferences((state) => state.taskOrdering);
+    const hideCompleted = usePreferences((state) => state.hideCompleted);
     const [mode, setMode] = useState<TaskDisplayMode>(defaultView);
     const [filters, setFilters] = useState<TaskFilterValues>({
         project: '',
@@ -59,11 +62,12 @@ export default function TasksPage({ view }: { view: TaskView }) {
         project: view === 'project' ? projectId : filters.project || undefined,
         status: view === 'completed' ? 'completed' : filters.status || undefined,
         priority: filters.priority || undefined,
+        hide_completed: view !== 'completed' && !filters.status && hideCompleted ? true : undefined,
         search: debouncedSearch || undefined,
         ordering:
             mode === 'board'
                 ? 'position,created_at'
-                : sort || (view === 'upcoming' ? 'due_date,due_time' : undefined),
+                : sort || (view === 'upcoming' ? 'due_date,due_time' : taskOrdering),
     };
     const query = useQuery({
         queryKey: ['tasks', 'list', parameters],
@@ -74,7 +78,13 @@ export default function TasksPage({ view }: { view: TaskView }) {
     const todayTasks = all.filter((task) => task.due_date === today);
     const completedToday = todayTasks.filter((task) => task.status === 'completed').length;
     const name = (user?.display_name || user?.username || 'there').split(' ')[0];
-    const hour = new Date().getHours();
+    const hour = Number(
+        new Intl.DateTimeFormat('en-US', {
+            timeZone: selectedTimeZone(),
+            hour: 'numeric',
+            hourCycle: 'h23',
+        }).format(new Date())
+    );
     const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
     const title =
         view === 'today'
@@ -124,7 +134,7 @@ export default function TasksPage({ view }: { view: TaskView }) {
                         <WeatherIcon size={18} className="text-secondary" strokeWidth={1.5} />
                     </span>
                     <span>
-                        {new Date(`${today}T12:00:00`).toLocaleDateString([], {
+                        {formatCalendarDate(today, {
                             weekday: 'long',
                             month: 'long',
                             day: 'numeric',
@@ -141,6 +151,16 @@ export default function TasksPage({ view }: { view: TaskView }) {
                                 ? 'Finding a little focus for your day…'
                                 : description}
                         </p>
+                        {view === 'project' && project && (
+                            <Button
+                                variant="outline"
+                                className="mt-4 h-9 gap-2 rounded-xl text-xs"
+                                onClick={() => editProject(project.id)}
+                            >
+                                <Settings2 size={14} />
+                                {project.key} · Project details
+                            </Button>
+                        )}
                     </div>
                     <div className="w-full shrink-0 rounded-2xl border border-white bg-white/75 p-4 shadow-[0_3px_12px_-8px_#02304730] sm:w-60 xl:w-64">
                         <div className="mb-3 flex justify-between gap-3 text-xs text-slate-500">

@@ -11,11 +11,13 @@ import { toast } from '@/components/ui/toast';
 import { DialogFooter } from '@/components/ui/dialog';
 import { LabeledSelect } from '@/components/form/labeled-select';
 import useInvalidateUsers from './use-invalidate-users';
+import useUserStore from '@/store/use-user-store';
 
 type Values = UpdatePanelUser & { password: string };
 
 export default function UserForm({ user, onClose }: { user?: PanelUser; onClose: () => void }) {
     const invalidate = useInvalidateUsers();
+    const currentUser = useUserStore((state) => state.user);
     const { register, control, handleSubmit } = useForm<Values>({
         defaultValues: {
             username: user?.username ?? '',
@@ -23,6 +25,7 @@ export default function UserForm({ user, onClose }: { user?: PanelUser; onClose:
             first_name: user?.first_name ?? '',
             last_name: user?.last_name ?? '',
             mobile: user?.mobile ?? '',
+            email: user?.email ?? '',
             role: user?.role ?? 'user',
             password: '',
         },
@@ -58,6 +61,7 @@ export default function UserForm({ user, onClose }: { user?: PanelUser; onClose:
                     <LabeledInput label="Last name" {...register('last_name')} maxLength={150} />
                 </div>
                 <LabeledInput label="Mobile" type="tel" {...register('mobile')} maxLength={32} />
+                <LabeledInput label="Email" type="email" {...register('email')} maxLength={254} />
                 <Controller
                     name="role"
                     control={control}
@@ -66,16 +70,38 @@ export default function UserForm({ user, onClose }: { user?: PanelUser; onClose:
                             {...field}
                             onValueChange={onChange}
                             label="Role"
-                            disabled={mutation.isPending}
-                            options={[
-                                { value: 'user', label: 'User', icon: <UserRound size={16} /> },
-                                { value: 'staff', label: 'Staff', icon: <Shield size={16} /> },
-                                {
-                                    value: 'superuser',
-                                    label: 'System administrator',
-                                    icon: <ShieldCheck size={16} />,
-                                },
-                            ]}
+                            disabled={
+                                mutation.isPending ||
+                                user?.id === currentUser?.id ||
+                                currentUser?.role !== 'superuser'
+                            }
+                            options={
+                                currentUser?.role === 'superuser'
+                                    ? [
+                                          {
+                                              value: 'user',
+                                              label: 'User',
+                                              icon: <UserRound size={16} />,
+                                          },
+                                          {
+                                              value: 'staff',
+                                              label: 'Administrator',
+                                              icon: <Shield size={16} />,
+                                          },
+                                          {
+                                              value: 'superuser',
+                                              label: 'System administrator',
+                                              icon: <ShieldCheck size={16} />,
+                                          },
+                                      ]
+                                    : [
+                                          {
+                                              value: 'user',
+                                              label: 'User',
+                                              icon: <UserRound size={16} />,
+                                          },
+                                      ]
+                            }
                         />
                     )}
                 />

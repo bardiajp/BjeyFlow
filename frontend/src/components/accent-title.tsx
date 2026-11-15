@@ -1,8 +1,22 @@
-export function AccentTitle({ children }: { children: string }) {
+export function AccentTitle({
+    children,
+    trailingDot = true,
+}: {
+    children: string;
+    trailingDot?: boolean;
+}) {
+    const title = trailingDot && !children.endsWith('.') ? `${children}.` : children;
     return (
         <>
-            {children.replace(/\.+$/, '')}
-            <span className="text-secondary">.</span>
+            {title.split(/(\.)/).map((part, index) =>
+                part === '.' ? (
+                    <span key={index} className="text-secondary">
+                        .
+                    </span>
+                ) : (
+                    part
+                )
+            )}
         </>
     );
 }

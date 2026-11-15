@@ -3,23 +3,31 @@ import { CircleHelp, Monitor, Moon, ShieldCheck, Sun } from 'lucide-react';
 import './login.css';
 import LoginForm from './components/login-form';
 import SignupForm from './components/signup-form';
+import PasswordRecovery from './components/password-recovery';
 import AccountHelp from './components/account-help';
-import ballIcon from '@/assets/ball.svg';
 import { PageTransition } from '@/components/page-transition';
 import { Button } from '@/components/ui/button';
 import { usePreferences } from '@/store/use-preferences';
+import { useSiteSettings } from '@/hooks/use-site-settings';
 
-export default function Login({ signup = false }: { signup?: boolean }) {
+export default function Login({
+    signup = false,
+    recovery,
+}: {
+    signup?: boolean;
+    recovery?: 'request' | 'confirm';
+}) {
     const theme = usePreferences((state) => state.theme);
+    const site = useSiteSettings();
     const setPreference = usePreferences((state) => state.setPreference);
     const ThemeIcon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
     useEffect(() => {
         const previousTitle = document.title;
-        document.title = `${signup ? 'Create your account' : 'Sign in'} · BjeyFlow`;
+        document.title = `${recovery ? 'Reset your password' : signup ? 'Create your account' : 'Sign in'} · ${site.app_name}`;
         return () => {
             document.title = previousTitle;
         };
-    }, [signup]);
+    }, [signup, recovery, site.app_name]);
 
     return (
         <PageTransition waitForAssets>
@@ -29,7 +37,7 @@ export default function Login({ signup = false }: { signup?: boolean }) {
                     aria-label="BjeyFlow artwork"
                 >
                     <img
-                        src="/images/login.png"
+                        src="/images/login.webp"
                         alt=""
                         className="absolute inset-0 h-full w-full object-cover"
                     />
@@ -38,10 +46,11 @@ export default function Login({ signup = false }: { signup?: boolean }) {
                     <header className="flex w-full items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5">
                             <span className="flex size-11 items-center justify-center">
-                                <img src={ballIcon} alt="" className="size-8" />
+                                <img src="/images/ball.svg" alt="" className="size-8" />
                             </span>
                             <span className="text-foreground text-[22px] font-semibold tracking-tight">
-                                BjeyFlow<span className="text-secondary">.</span>
+                                {site.app_name}
+                                <span className="text-secondary">.</span>
                             </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -71,7 +80,13 @@ export default function Login({ signup = false }: { signup?: boolean }) {
                         </div>
                     </header>
                     <main className="flex min-w-0 flex-1 items-center justify-center py-12 lg:py-10">
-                        {signup ? <SignupForm /> : <LoginForm />}
+                        {recovery ? (
+                            <PasswordRecovery key={recovery} mode={recovery} />
+                        ) : signup ? (
+                            <SignupForm />
+                        ) : (
+                            <LoginForm />
+                        )}
                     </main>
                     <footer className="text-muted-foreground flex w-full flex-wrap items-center justify-between gap-3 text-[10px]">
                         <span>© {new Date().getFullYear()} BjeyFlow · A little every day.</span>

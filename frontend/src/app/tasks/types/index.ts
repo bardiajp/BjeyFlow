@@ -14,6 +14,8 @@ export interface SubTask {
 
 export interface Task {
     id: string;
+    number: number;
+    identifier: string;
     project: string;
     project_name: string;
     project_icon: ProjectIconName;
@@ -25,6 +27,7 @@ export interface Task {
     due_time: string | null;
     position: number;
     completed_at: string | null;
+    deleted_at: string | null;
     subtasks: SubTask[];
     subtasks_count: number;
     completed_subtasks_count: number;
@@ -33,6 +36,7 @@ export interface Task {
 }
 
 export interface TaskFilters {
+    hide_completed?: boolean;
     project?: string;
     due_date?: string;
     due_date_after?: string;

@@ -26,7 +26,7 @@ class SubTaskViewSet(ModelViewSet):
     def parent_task(self):
         return get_object_or_404(
             Task.objects.select_related("project").filter(
-                project__owner=self.request.user
+                project__owner=self.request.user, deleted_at__isnull=True
             ),
             pk=self.kwargs["task_pk"],
         )

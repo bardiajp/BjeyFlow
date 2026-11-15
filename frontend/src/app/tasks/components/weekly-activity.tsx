@@ -1,18 +1,20 @@
 import type { Task } from '../types';
 import { CalendarDays } from 'lucide-react';
-import { addDays, localDate } from '@/lib/date';
+import { addDays, todayDate, weekLabels } from '@/lib/date';
+import { usePreferences } from '@/store/use-preferences';
 import { cn } from '@/lib/utils';
 
 export function WeeklyActivity({ tasks, today }: { tasks: Task[]; today: string }) {
     const dayOfWeek = new Date(`${today}T12:00:00`).getDay();
-    const monday = addDays(today, -((dayOfWeek + 6) % 7));
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label, index) => {
-        const day = addDays(monday, index);
+    const weekStart = usePreferences((state) => state.weekStart);
+    const start = addDays(today, -((dayOfWeek - weekStart + 7) % 7));
+    const days = weekLabels().map((label, index) => {
+        const day = addDays(start, index);
         const count = tasks.filter(
             (task) =>
                 task.status === 'completed' &&
                 task.completed_at &&
-                localDate(new Date(task.completed_at)) === day
+                todayDate(new Date(task.completed_at)) === day
         ).length;
         return { label, day, count };
     });

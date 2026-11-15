@@ -3,12 +3,35 @@ from rest_framework.routers import SimpleRouter
 
 from users.views.auth import ChangePasswordView, LoginView, LogoutView, MeView
 from users.views.management import UserManagementViewSet
+from users.views.settings import PreferencesView, ProfileView, SessionsView
 from users.views.signup import SignupResendView, SignupVerifyView, SignupView
+from users.views.password_reset import (
+    PasswordResetRequestView,
+    PasswordResetConfirmView,
+)
 
 router = SimpleRouter()
 router.register(r"", UserManagementViewSet, basename="users")
 
 urlpatterns = [
+    path("auth/profile/", ProfileView.as_view(), name="profile"),
+    path("auth/preferences/", PreferencesView.as_view(), name="preferences"),
+    path("auth/sessions/", SessionsView.as_view(), name="sessions"),
+    path(
+        "auth/sessions/<uuid:session_id>/",
+        SessionsView.as_view(),
+        name="session-detail",
+    ),
+    path(
+        "auth/password-reset/",
+        PasswordResetRequestView.as_view(),
+        name="password-reset",
+    ),
+    path(
+        "auth/password-reset/confirm/",
+        PasswordResetConfirmView.as_view(),
+        name="password-reset-confirm",
+    ),
     path("auth/signup/", SignupView.as_view(), name="signup"),
     path("auth/signup/verify/", SignupVerifyView.as_view(), name="signup-verify"),
     path("auth/signup/resend/", SignupResendView.as_view(), name="signup-resend"),

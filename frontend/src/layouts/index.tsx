@@ -13,7 +13,6 @@ import { AppSidebar } from './sidebar';
 import { PageTransition } from '@/components/page-transition';
 import { SearchDialog } from './search-dialog';
 import { useSiteSettings } from '@/hooks/use-site-settings';
-import { useTaskNotifications } from '@/hooks/use-task-notifications';
 import { usePreferences } from '@/store/use-preferences';
 
 export default function Layout() {
@@ -42,9 +41,26 @@ export default function Layout() {
     const [helpOpen, setHelpOpen] = useState(false);
     const searchRef = useRef<HTMLInputElement>(null);
     const selected = tasks.data?.find((task) => task.id === selectedTask);
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const taskId = params.get('task');
+        if (!taskId || !tasks.isSuccess) return;
+        if (tasks.data.some((task) => task.id === taskId)) {
+            setSelectedTask(taskId);
+            setTaskDetailOpen(true);
+        }
+        params.delete('task');
+        navigate(
+            {
+                pathname: location.pathname,
+                search: params.toString() ? `?${params}` : '',
+                hash: location.hash,
+            },
+            { replace: true }
+        );
+    }, [location.search, location.pathname, location.hash, tasks.isSuccess, tasks.data, navigate]);
     usePreferences((state) => state.calendar);
     usePreferences((state) => state.hourCycle);
-    useTaskNotifications(tasks.data ?? [], openTask);
     const createTask = (projectId?: string) =>
         setTaskCreate({
             projectId: projectId ?? projectRoute?.params.projectId,
@@ -64,6 +80,7 @@ export default function Layout() {
         '/admin/services': 'Services',
         '/admin/emails': 'Email',
         '/admin/email-templates': 'Email templates',
+        '/admin/notification-templates': 'Notification templates',
         '/admin/errors': 'Errors',
         '/admin/settings': 'Workspace settings',
     };

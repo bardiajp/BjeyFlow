@@ -9,9 +9,15 @@ from .views import (
     OverviewView,
     PublicSettingsView,
     SiteSettingsView,
+    PushTemplatesView,
 )
 
 urlpatterns = [
+    path(
+        "notification-templates/",
+        PushTemplatesView.as_view(),
+        name="admin-notification-templates",
+    ),
     path(
         "email-templates/", EmailTemplatesView.as_view(), name="admin-email-templates"
     ),

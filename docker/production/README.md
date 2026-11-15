@@ -105,8 +105,52 @@ its service worker serves a static offline screen for navigation failures, even
 when launched without a connection. API responses and account data are never
 cached for offline use; task editing and synchronization require a connection.
 The service worker is registered in production builds on HTTPS or localhost,
-not by the development server. Updates activate after older app tabs close;
-increment the offline cache version when changing the cached offline files.
+not by the development server. Updates activate as soon as the new worker is
+installed; increment the offline cache version when changing the cached offline files.
+
+### Web Push reminders
+
+Web Push requires a stable P-256 VAPID key pair. Set `VAPID_PUBLIC_KEY` (base64url
+uncompressed public point), `VAPID_PRIVATE_KEY` (base64url 32-byte private key),
+and `VAPID_SUBJECT` (a `mailto:` contact) in the root-only `.env.production`.
+Do not commit, print in CI logs, or rotate the private key casually; changing the
+key invalidates existing subscriptions and devices must subscribe again. Keep a
+restricted off-server backup of the key. When unconfigured, the app says so and
+the worker does not send reminders.
+
+After the updated backend image is running, generate a key pair in a new,
+root-only file (this refuses to overwrite an existing file):
+
+```sh
+umask 077
+set -C
+docker compose --env-file .env.production -f compose.production.yml exec -T backend python -c 'import base64; from cryptography.hazmat.primitives.asymmetric import ec; from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat; k=ec.generate_private_key(ec.SECP256R1()); enc=lambda b: base64.urlsafe_b64encode(b).decode().rstrip("="); print("VAPID_PRIVATE_KEY="+enc(k.private_numbers().private_value.to_bytes(32,"big"))); print("VAPID_PUBLIC_KEY="+enc(k.public_key().public_bytes(Encoding.X962,PublicFormat.UncompressedPoint)))' > /root/bjeyflow-vapid.env
+set +C
+```
+
+Privately copy those two values into `.env.production` along with
+`VAPID_SUBJECT=mailto:your-contact@example.com`, replacing any blank entries.
+Keep the generated file restricted and back it up securely; do not send its
+contents to chat or paste them into CI logs. Recreate the backend and worker to
+load the changed environment, then send a test from the device settings.
+
+The `push-worker` Compose service scans every minute. After upgrading, install
+the updated `deploy.sh` at `/usr/local/sbin/bjeyflow-deploy` as documented above;
+the forced-command copy is outside the uploaded release and is not automatically
+replaced. The updated deploy script starts the worker after backend migrations.
+For the initial rollout also start it with
+`docker compose --env-file .env.production -f compose.production.yml up -d push-worker`
+after configuring VAPID. Do not start multiple workers without retaining the
+database uniqueness and row-lock protections.
+
+Subscriptions belong to a user and a login session. Logout, password changes,
+revocation or session expiry stops delivery; users must enable a device again
+after signing in. Reminder delivery is best effort, may be delayed by the push
+service, expires quickly, and is not replayed after quiet hours. Date-only tasks
+default to 09:00 in the chosen time zone. Notification text hides task titles.
+Focus completion uses a local notification only while the app remains open. Test
+notifications report push-service acceptance, not confirmed device delivery.
+For iOS/iPadOS 16.4+, install the app to the Home Screen before enabling push.
 
 The production stack is separate from the development Compose file. It runs
 Nginx with the Vite production build, non-root Gunicorn (two workers/two threads),

@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { usePreferences } from '@/store/use-preferences';
+import { usePushNotifications } from '@/hooks/use-push-notifications';
 
 export function FocusSession() {
+    const push = usePushNotifications();
     const defaultMinutes = usePreferences((state) => state.focusMinutes);
     const [minutes, setMinutes] = useState(String(defaultMinutes));
     const [durationMinutes, setDurationMinutes] = useState(defaultMinutes);
@@ -25,11 +27,29 @@ export function FocusSession() {
                     title: 'Focus session complete',
                     description: 'Nice work. Take a short break—you earned it.',
                 });
+                if (
+                    usePreferences.getState().browserNotifications &&
+                    push.enabled &&
+                    'Notification' in window &&
+                    Notification.permission === 'granted' &&
+                    'serviceWorker' in navigator
+                ) {
+                    void navigator.serviceWorker.ready
+                        .then((registration) =>
+                            registration.showNotification('Focus session complete', {
+                                body: 'Nice work. Take a short break—you earned it.',
+                                icon: '/icons/icon-192.png',
+                                tag: 'focus-complete',
+                                data: { url: new URL('/today', window.location.origin).href },
+                            })
+                        )
+                        .catch((error) => console.error('Focus notification failed:', error));
+                }
             }
         };
         const interval = setInterval(tick, 250);
         return () => clearInterval(interval);
-    }, [end]);
+    }, [end, push.enabled]);
     const time = `${Math.floor(remaining / 60)
         .toString()
         .padStart(2, '0')}:${(remaining % 60).toString().padStart(2, '0')}`;

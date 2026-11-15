@@ -32,6 +32,7 @@ compose=(docker compose --env-file .env.production -f compose.production.yml)
 "${compose[@]}" build backend web
 sed -i "s/^RELEASE_TAG=.*/RELEASE_TAG=$release/" .env.production
 "${compose[@]}" up -d --no-deps --wait --wait-timeout 180 backend
+"${compose[@]}" up -d --no-deps --force-recreate push-worker
 "${compose[@]}" up -d --no-deps --force-recreate --wait --wait-timeout 120 web
 "${compose[@]}" exec -T backend python manage.py migrate --check
 "${compose[@]}" exec -T backend python manage.py check --deploy

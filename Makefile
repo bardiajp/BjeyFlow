@@ -1,4 +1,4 @@
-.PHONY: help up down venv install install-backend install-frontend dev dev-backend dev-frontend build build-frontend check lint lint-frontend format docker-up docker-down docker-build db-up logs clean migrate seed seed-local makemigrations superuser shell
+.PHONY: help up down venv install install-backend install-frontend dev dev-backend dev-frontend build build-frontend check lint lint-frontend format docker-up docker-down docker-build db-up logs clean migrate seed seed-demo seed-local makemigrations superuser shell
 
 PYTHON ?= $(CURDIR)/.venv/bin/python
 PYTHON_BOOTSTRAP ?= python3
@@ -73,7 +73,14 @@ format: ## Format backend code with black
 migrate: ## Run Django migrations
 	"$(PYTHON)" backend/manage.py migrate
 
-seed: ## Migrate and seed development data using the built backend image
+seed: ## Migrate and create a superuser using the built backend image
+	@test -f .env || cp .env.example .env
+	docker compose create --no-build backend
+	docker compose up -d --wait db
+	docker compose run --rm --no-deps backend python manage.py migrate --noinput
+	docker compose run --rm --no-deps -e DJANGO_SUPERUSER_USERNAME -e DJANGO_SUPERUSER_DISPLAY_NAME -e DJANGO_SUPERUSER_EMAIL -e DJANGO_SUPERUSER_PASSWORD backend python manage.py seed_superuser
+
+seed-demo: ## Migrate and seed development sample data using the built backend image
 	@test -f .env || cp .env.example .env
 	docker compose create --no-build backend
 	docker compose up -d --wait db

@@ -273,7 +273,7 @@ class Command(BaseCommand):
             f"{result['total_subtasks']} subtasks."
         )
         self.stdout.write(
-            f"Sign in as {username} to see this data. Use SEED_USERNAME=<your-login> with make seed to target another account."
+            f"Sign in as {username} to see this data. Use SEED_USERNAME=<your-login> with make seed-demo to target another account."
         )
         if result["batch"]:
             self.stdout.write(f"Fresh sample batch: {result['batch']}")
@@ -294,7 +294,7 @@ class Command(BaseCommand):
             result["projects"] or result["tasks"] or result["subtasks"]
         ):
             self.stdout.write(
-                "The requested sample dataset already exists. Increase the counts or use SEED_ARGS='--append' with make seed for a fresh batch."
+                "The requested sample dataset already exists. Increase the counts or use SEED_ARGS='--append' with make seed-demo for a fresh batch."
             )
         if result["skipped"]:
             self.stdout.write(

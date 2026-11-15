@@ -36,13 +36,13 @@ export default function SettingsPage() {
     const { setPreference } = preferences;
     const name = user?.display_name || user?.username || 'Your account';
     return (
-        <div className="flex min-h-full w-full min-w-0 flex-1 flex-col gap-6">
-            <header className="surface-wash border-input relative overflow-hidden rounded-[24px] border p-5 sm:p-6">
+        <div className="flex min-h-full w-full min-w-0 flex-1 flex-col gap-4 sm:gap-6">
+            <header className="surface-wash border-input relative overflow-hidden rounded-2xl border p-4 sm:rounded-[24px] sm:p-6">
                 <div className="text-muted-foreground mb-5 flex items-center gap-2 text-[9px] font-semibold tracking-[0.16em]">
                     <Waves size={15} />
                     YOUR PERSONAL CURRENT
                 </div>
-                <h1 className="text-foreground text-[30px] font-semibold tracking-[-0.04em]">
+                <h1 className="text-foreground text-[23px] font-semibold tracking-[-0.04em] sm:text-[30px]">
                     <AccentTitle>Make yourself at home</AccentTitle>
                 </h1>
                 <p className="text-muted-foreground mt-3 text-sm">
@@ -72,7 +72,7 @@ export default function SettingsPage() {
                     </Button>
                 </div>
             )}
-            <div className="min-w-0 columns-1 gap-5 lg:columns-2 2xl:columns-3 [&>section]:mb-5 [&>section]:break-inside-avoid">
+            <div className="settings-cards min-w-0 columns-1 gap-5 lg:columns-2 2xl:columns-3 [&>section]:mb-5 [&>section]:break-inside-avoid">
                 <section className="border-input bg-card rounded-[22px] border p-5">
                     <div className="text-muted-foreground mb-5 flex items-center gap-2 text-[10px] font-semibold tracking-[0.1em]">
                         <UserRound size={14} />

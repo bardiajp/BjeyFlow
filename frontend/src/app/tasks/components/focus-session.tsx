@@ -45,7 +45,7 @@ export function FocusSession() {
     return (
         <Card
             variant="ghost"
-            className="surface-focus text-primary-foreground relative overflow-hidden rounded-[22px] border border-slate-200/80 py-5 shadow-[0_4px_24px_-16px_#02304720]"
+            className="surface-focus text-primary-foreground relative overflow-hidden rounded-2xl border border-slate-200/80 py-4 shadow-[0_4px_24px_-16px_#02304720] sm:rounded-[22px] sm:py-5"
         >
             <CardContent className="px-5">
                 <div className="flex items-center justify-between gap-2">
@@ -73,7 +73,7 @@ export function FocusSession() {
                 <p className="mt-4 text-center text-[11px] text-slate-400">
                     Give one thing your full attention.
                 </p>
-                <div className="relative mx-auto my-4 flex size-48 items-center justify-center">
+                <div className="relative mx-auto my-3 flex size-36 items-center justify-center sm:my-4 sm:size-48">
                     <svg
                         viewBox="0 0 200 200"
                         aria-hidden="true"

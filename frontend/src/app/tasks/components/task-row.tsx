@@ -61,7 +61,7 @@ export function TaskRow({
             className={cn(
                 'group hover:border-primary/20 hover:bg-accent/60 rounded-xl border border-transparent transition-[background-color,border-color] duration-200 motion-reduce:transition-none',
                 board &&
-                    'hover:border-primary/50 rounded-2xl border-slate-200/80 bg-white p-4 shadow-[0_3px_10px_-6px_#02304725] transition-[background-color,border-color,box-shadow] hover:bg-white hover:shadow-[0_6px_18px_-8px_#02304735]'
+                    'hover:border-primary/50 rounded-2xl border-slate-200/80 bg-white p-3 shadow-[0_3px_10px_-6px_#02304725] transition-[background-color,border-color,box-shadow] hover:bg-white hover:shadow-[0_6px_18px_-8px_#02304735] sm:p-4'
             )}
         >
             {board && (
@@ -90,7 +90,7 @@ export function TaskRow({
             )}
             <div
                 className={cn(
-                    'flex items-center gap-3 px-2 py-4 sm:px-3',
+                    'flex items-center gap-2 px-1 py-3 sm:gap-3 sm:px-3 sm:py-4',
                     board && 'flex-col items-stretch gap-3 px-0 py-0 sm:px-0'
                 )}
             >

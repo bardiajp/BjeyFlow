@@ -4,6 +4,32 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@media (max-width: 639px) {
+    html {
+        touch-action: manipulation;
+    }
+
+    input:not([type='checkbox']):not([type='radio']):not([type='color']):not([type='range']):not(
+            [type='file']
+        ),
+    textarea,
+    select,
+    .editor-form
+        input:not([type='checkbox']):not([type='radio']):not([type='color']):not(
+            [type='range']
+        ):not([type='file']),
+    .editor-form textarea,
+    .editor-form select {
+        font-size: 16px;
+    }
+
+    .settings-cards > section {
+        margin-bottom: 0.75rem;
+        padding: 1rem;
+        border-radius: 1rem;
+    }
+}
+
 @keyframes priority-check-draw {
     to {
         stroke-dashoffset: 0;

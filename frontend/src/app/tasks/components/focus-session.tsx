@@ -38,7 +38,7 @@ export function FocusSession() {
                         .then((registration) =>
                             registration.showNotification('Focus session complete', {
                                 body: 'Nice work. Take a short break—you earned it.',
-                                icon: '/icons/icon-192.png',
+                                icon: '/icons/notification.png',
                                 tag: 'focus-complete',
                                 data: { url: new URL('/today', window.location.origin).href },
                             })

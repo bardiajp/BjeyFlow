@@ -81,15 +81,56 @@ export default function AdminNotificationTemplates() {
                         <Smartphone size={16} />
                         Illustrative device preview
                     </div>
-                    <div className="mx-auto max-w-sm rounded-[22px] border border-slate-500/20 bg-[#263f4d] p-4 text-white shadow-lg">
-                        <div className="mb-3 flex items-center gap-2 text-xs text-slate-300">
-                            <img src="/icons/icon-192.png" alt="" className="size-6 rounded-md" />
-                            BjeyFlow<span className="ml-auto">now</span>
-                        </div>
-                        <p className="text-sm font-semibold">{template.title}</p>
-                        <p className="mt-1 text-xs leading-6 text-slate-200">{template.body}</p>
+                    <div className="mx-auto grid max-w-3xl gap-4 xl:grid-cols-2">
+                        {(
+                            [
+                                {
+                                    label: 'Light mode',
+                                    card: 'border-[#d9e5eb] bg-[#f8fbfd] text-[#183746]',
+                                    secondary: 'text-[#506976]',
+                                },
+                                {
+                                    label: 'Dark mode',
+                                    card: 'border-[#45606c] bg-[#263f4d] text-[#f2f8fb]',
+                                    secondary: 'text-[#c6d9e2]',
+                                },
+                            ] as const
+                        ).map((mode) => (
+                            <section
+                                key={mode.label}
+                                aria-label={`${mode.label} notification preview`}
+                            >
+                                <h2 className="text-muted-foreground mb-2 text-xs font-medium">
+                                    {mode.label}
+                                </h2>
+                                <div
+                                    className={cn(
+                                        'min-h-32 rounded-[22px] border p-4 shadow-lg',
+                                        mode.card
+                                    )}
+                                >
+                                    <div
+                                        className={cn(
+                                            'mb-3 flex items-center gap-2 text-xs',
+                                            mode.secondary
+                                        )}
+                                    >
+                                        <img
+                                            src="/icons/notification.png"
+                                            alt=""
+                                            className="size-6 rounded-md"
+                                        />
+                                        BjeyFlow<span className="ml-auto">now</span>
+                                    </div>
+                                    <p className="text-sm font-semibold">{template.title}</p>
+                                    <p className={cn('mt-1 text-xs leading-6', mode.secondary)}>
+                                        {template.body}
+                                    </p>
+                                </div>
+                            </section>
+                        ))}
                     </div>
-                    <p className="text-muted-foreground mx-auto mt-5 max-w-sm text-xs leading-6">
+                    <p className="text-muted-foreground mx-auto mt-5 max-w-3xl text-xs leading-6">
                         Device operating systems control the final appearance. Task titles are
                         hidden to protect lock-screen privacy.
                     </p>

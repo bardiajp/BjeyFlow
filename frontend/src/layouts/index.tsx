@@ -186,7 +186,7 @@ export default function Layout() {
                     </main>
                 </div>
                 <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
-                    <DialogContent className="top-0 left-0 block h-dvh max-h-dvh w-72 max-w-[85vw] translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none p-0 transition-transform duration-500 ease-in-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full motion-reduce:transition-none sm:max-w-72">
+                    <DialogContent className="top-0 left-0 block h-dvh max-h-dvh w-72 max-w-[85vw] translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none rounded-tr-[24px] rounded-br-[24px] p-0 transition-transform duration-500 ease-in-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full motion-reduce:transition-none sm:max-w-72">
                         <DialogTitle className="sr-only">Navigation</DialogTitle>
                         {sidebar()}
                     </DialogContent>

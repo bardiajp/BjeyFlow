@@ -47,7 +47,7 @@ export function FocusSession() {
             variant="ghost"
             className="surface-focus text-primary-foreground relative overflow-hidden rounded-2xl border border-slate-200/80 py-4 shadow-[0_4px_24px_-16px_#02304720] sm:rounded-[22px] sm:py-5"
         >
-            <CardContent className="px-5">
+            <CardContent className="min-w-0 px-4 sm:px-5">
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                         <span className="text-primary-foreground flex size-8 items-center justify-center rounded-xl border border-white bg-white/80">
@@ -73,7 +73,7 @@ export function FocusSession() {
                 <p className="mt-4 text-center text-[11px] text-slate-400">
                     Give one thing your full attention.
                 </p>
-                <div className="relative mx-auto my-3 flex size-36 items-center justify-center sm:my-4 sm:size-48">
+                <div className="relative mx-auto my-3 flex size-40 max-w-full items-center justify-center sm:my-4 sm:size-48">
                     <svg
                         viewBox="0 0 200 200"
                         aria-hidden="true"
@@ -108,8 +108,8 @@ export function FocusSession() {
                             className="text-primary transition-[stroke-dashoffset] duration-700 ease-linear motion-reduce:transition-none"
                         />
                     </svg>
-                    <div className="relative text-center">
-                        <span className="mb-2 block text-[8px] font-medium tracking-[0.17em] text-slate-400">
+                    <div className="relative flex w-[70%] min-w-0 flex-col items-center text-center">
+                        <span className="mb-1 block text-[8px] leading-tight font-medium tracking-[0.12em] text-slate-400 sm:mb-2 sm:tracking-[0.17em]">
                             {end !== null
                                 ? 'JUST THIS MOMENT'
                                 : !remaining
@@ -119,11 +119,11 @@ export function FocusSession() {
                         <div
                             role="timer"
                             aria-label="Focus time remaining"
-                            className="text-[42px] leading-none font-medium tracking-[-0.06em] tabular-nums"
+                            className="max-w-full text-[34px] leading-none font-medium tracking-[-0.06em] tabular-nums sm:text-[42px]"
                         >
                             {time}
                         </div>
-                        <span className="mt-2 block text-[9px] text-slate-400">
+                        <span className="mt-1 block max-w-full text-[9px] leading-tight text-slate-400 sm:mt-2">
                             {end !== null
                                 ? 'One small step at a time'
                                 : !remaining
@@ -146,7 +146,7 @@ export function FocusSession() {
                             aria-pressed={durationMinutes === preset}
                             onClick={() => setDuration(preset)}
                             className={cn(
-                                'flow-control rounded-lg border border-transparent px-2 py-2 text-[10px] text-slate-400 outline-none disabled:cursor-not-allowed disabled:opacity-50',
+                                'flow-control min-h-11 rounded-lg border border-transparent px-2 py-2 text-[11px] text-slate-400 outline-none disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:text-[10px]',
                                 durationMinutes === preset &&
                                     'text-primary-foreground bg-white font-medium shadow-sm'
                             )}
@@ -155,9 +155,9 @@ export function FocusSession() {
                         </button>
                     ))}
                 </div>
-                <label className="mt-3 flex items-center justify-between gap-3 text-[10px] text-slate-400">
+                <label className="mt-3 flex min-w-0 items-center justify-between gap-3 text-[11px] text-slate-400 sm:text-[10px]">
                     Your own pace
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex shrink-0 items-center gap-1.5">
                         <input
                             type="text"
                             inputMode="numeric"
@@ -167,7 +167,7 @@ export function FocusSession() {
                             title="Changing the duration resets the timer"
                             value={minutes}
                             disabled={end !== null}
-                            className="flow-control text-primary-foreground h-7 w-12 rounded-lg border border-slate-200 bg-white px-1.5 text-center text-[11px] tabular-nums outline-none disabled:opacity-50"
+                            className="flow-control text-primary-foreground h-10 w-16 rounded-lg border border-slate-200 bg-white px-1.5 text-center text-[11px] tabular-nums outline-none disabled:opacity-50 sm:h-7 sm:w-12"
                             onChange={(event) => {
                                 const value = event.target.value;
                                 if (!/^\d{0,3}$/.test(value)) return;
@@ -203,7 +203,7 @@ export function FocusSession() {
                 </label>
                 <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-4">
                     <Button
-                        className="bg-brand h-10 min-w-0 flex-1 gap-2 rounded-xl text-xs font-medium text-white shadow-[0_4px_10px_-5px_#02304740]"
+                        className="bg-brand h-11 min-w-0 flex-1 gap-2 rounded-xl text-xs font-medium text-white shadow-[0_4px_10px_-5px_#02304740] sm:h-10"
                         onClick={() => {
                             if (end !== null) {
                                 setRemaining(Math.max(0, Math.ceil((end - Date.now()) / 1000)));
@@ -242,7 +242,7 @@ export function FocusSession() {
                         aria-label="Reset focus timer"
                         title="Reset timer"
                         disabled={!started}
-                        className="size-10 shrink-0 rounded-xl border border-slate-200 bg-white text-slate-400"
+                        className="size-11 shrink-0 rounded-xl border border-slate-200 bg-white text-slate-400 sm:size-10"
                         onClick={() => {
                             setEnd(null);
                             setRemaining(durationMinutes * 60);

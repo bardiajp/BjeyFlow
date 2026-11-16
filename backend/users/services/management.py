@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
@@ -66,6 +68,10 @@ class UserManagementService:
         data = validated_data.copy()
         new_role = data.get("role", instance.role)
         active = data.get("is_active", instance.is_active)
+        if "username" in data and data["username"] != instance.username:
+            if instance.username_changed_at and timezone.now() < instance.username_changed_at + timedelta(days=7):
+                raise ValidationError({"username": "You can change this username once every 7 days."})
+            data["username_changed_at"] = timezone.now()
         if not actor.is_superuser and new_role != "user":
             raise PermissionDenied(
                 "Only a system administrator can assign administrator roles."

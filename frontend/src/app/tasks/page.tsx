@@ -173,7 +173,7 @@ export default function TasksPage({ view }: { view: TaskView }) {
                             value={completedToday}
                             max={todayTasks.length}
                             label="Daily task progress"
-                            className="bg-primary/20 [&>div]:bg-brand"
+                            className="bg-primary/20 [&>div]:bg-[#023047] dark:[&>div]:bg-[#8ecae6]"
                         />
                     </div>
                 </div>

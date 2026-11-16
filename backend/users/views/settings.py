@@ -1,14 +1,17 @@
-from django.db import transaction
+from datetime import timedelta
+
+from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError
 
 from administration.audit import record_event
 from users.models import AccountSession, User
 from users.serializers.auth import UserProfileSerializer
-from users.serializers.settings import PreferencesSerializer, ProfileUpdateSerializer
+from users.serializers.settings import PreferencesSerializer, ProfileUpdateSerializer, UsernameUpdateSerializer
 
 
 class ProfileView(APIView):
@@ -22,6 +25,30 @@ class ProfileView(APIView):
         serializer.save()
         record_event("profile.updated", actor=request.user, request=request)
         return Response({"user": UserProfileSerializer(request.user).data})
+
+
+class UsernameView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def patch(self, request):
+        serializer = UsernameUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            with transaction.atomic():
+                user = User.objects.select_for_update().get(pk=request.user.pk)
+                username = serializer.validated_data["username"]
+                if username == user.username:
+                    return Response({"user": UserProfileSerializer(user).data})
+                if user.username_changed_at and timezone.now() < user.username_changed_at + timedelta(days=7):
+                    raise ValidationError({"username": "You can change your username once every 7 days."})
+                old_username = user.username
+                user.username = username
+                user.username_changed_at = timezone.now()
+                user.save(update_fields=["username", "username_changed_at"])
+                record_event("user.username_changed", actor=user, target=user.pk, request=request, metadata={"previous_username": old_username, "username": username})
+        except IntegrityError as exc:
+            raise ValidationError({"username": "This username is already taken."}) from exc
+        return Response({"user": UserProfileSerializer(user).data})
 
 
 class PreferencesView(APIView):

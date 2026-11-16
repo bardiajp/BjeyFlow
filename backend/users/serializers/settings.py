@@ -4,10 +4,18 @@ import io
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from PIL import Image, UnidentifiedImageError
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from rest_framework import serializers
 
 from core.models import Project
 from users.models import User
+
+
+class UsernameUpdateSerializer(serializers.Serializer):
+    username = serializers.CharField(min_length=3, max_length=150, validators=[UnicodeUsernameValidator()])
+
+    def validate_username(self, value):
+        return User.normalize_username(value)
 
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):

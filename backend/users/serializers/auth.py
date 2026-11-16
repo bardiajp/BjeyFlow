@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from users.models import User
+from datetime import timedelta
 
 
 class LoginSerializer(TokenObtainPairSerializer):
@@ -39,12 +40,19 @@ class ResetPasswordSerializer(serializers.Serializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     role = serializers.CharField(read_only=True)
+    username_change_available_at = serializers.SerializerMethodField()
+
+    def get_username_change_available_at(self, user):
+        if user.username_changed_at:
+            return user.username_changed_at + timedelta(days=7)
+        return None
 
     class Meta:
         model = User
         fields = (
             "id",
             "username",
+            "username_change_available_at",
             "display_name",
             "first_name",
             "last_name",

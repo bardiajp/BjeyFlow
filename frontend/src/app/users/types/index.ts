@@ -3,6 +3,7 @@ export type UserRole = 'user' | 'staff' | 'superuser';
 export interface User {
     id: string;
     username: string;
+    username_change_available_at: string | null;
     display_name: string;
     role: UserRole;
     email: string;

@@ -8,6 +8,10 @@ export async function updateProfile(values: ProfileValues) {
     return (await axiosInstance.patch<AuthResponse>('users/auth/profile/', values)).data;
 }
 
+export async function updateUsername(username: string) {
+    return (await axiosInstance.patch<AuthResponse>('users/auth/username/', { username })).data;
+}
+
 export async function getPreferences() {
     return (await axiosInstance.get<Partial<Preferences>>('users/auth/preferences/')).data;
 }

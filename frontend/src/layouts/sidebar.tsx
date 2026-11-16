@@ -90,24 +90,20 @@ function LevelProgress({
         xp.data.level >= 20
             ? {
                   badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200',
-                  bar: 'bg-amber-500',
                   border: 'border-amber-400/50',
               }
             : xp.data.level >= 10
               ? {
                     badge: 'bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-200',
-                    bar: 'bg-violet-500',
                     border: 'border-violet-400/50',
                 }
               : xp.data.level >= 5
                 ? {
                       badge: 'bg-emerald-100 text-emerald-700',
-                      bar: 'bg-emerald-600',
                       border: 'border-emerald-500/40',
                   }
                 : {
                       badge: 'bg-primary/20 text-primary-foreground',
-                      bar: 'bg-brand',
                       border: 'border-primary/40',
                   };
     if (collapsed) {
@@ -204,10 +200,7 @@ function LevelProgress({
                 className="bg-primary/15 mt-1.5 h-1.5 overflow-hidden rounded-full"
             >
                 <div
-                    className={cn(
-                        'h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none',
-                        colors.bar
-                    )}
+                    className="h-full rounded-full bg-[#023047] transition-[width] duration-500 motion-reduce:transition-none dark:bg-[#8ecae6]"
                     style={{ width: `${levelProgress}%` }}
                 />
             </div>
@@ -221,7 +214,7 @@ function LevelProgress({
                     </div>
                     <div className="bg-primary/15 mt-1.5 h-1.5 overflow-hidden rounded-full">
                         <div
-                            className="bg-brand h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"
+                            className="h-full rounded-full bg-[#023047] transition-[width] duration-500 motion-reduce:transition-none dark:bg-[#8ecae6]"
                             style={{ width: `${leagueProgress}%` }}
                         />
                     </div>

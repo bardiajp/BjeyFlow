@@ -178,7 +178,7 @@ export function DesktopSettings() {
                     </details>
                 </div>
             </section>
-            <section className="border-input bg-card mt-4 rounded-[22px] border p-5 sm:p-6">
+            <section className="border-input bg-card rounded-[22px] border p-5 sm:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="flex min-w-0 items-start gap-3">
                         <span className="bg-accent text-primary-foreground flex size-11 shrink-0 items-center justify-center rounded-2xl">

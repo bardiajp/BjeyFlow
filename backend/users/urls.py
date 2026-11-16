@@ -3,7 +3,7 @@ from rest_framework.routers import SimpleRouter
 
 from users.views.auth import ChangePasswordView, LoginView, LogoutView, MeView
 from users.views.management import UserManagementViewSet
-from users.views.settings import PreferencesView, ProfileView, SessionsView
+from users.views.settings import PreferencesView, ProfileView, SessionsView, UsernameView
 from users.views.push import PushConfigView, PushSubscriptionsView, PushTestView
 from users.views.signup import SignupResendView, SignupVerifyView, SignupView
 from users.views.password_reset import (
@@ -23,6 +23,7 @@ urlpatterns = [
     ),
     path("auth/push/test/", PushTestView.as_view(), name="push-test"),
     path("auth/profile/", ProfileView.as_view(), name="profile"),
+    path("auth/username/", UsernameView.as_view(), name="username"),
     path("auth/preferences/", PreferencesView.as_view(), name="preferences"),
     path("auth/sessions/", SessionsView.as_view(), name="sessions"),
     path(

@@ -11,7 +11,7 @@ Create these GitHub Actions secrets in the repository (or its `production`
 environment):
 
 - `DEPLOY_SSH_KEY`: the complete dedicated deployment private key.
-- `DEPLOY_KNOWN_HOSTS`: the verified SSH host-key line for `94.184.25.40`.
+- `DEPLOY_KNOWN_HOSTS`: the verified SSH host-key line for `194.117.64.181`.
 
 The matching public key on the server must use this authorized_keys entry:
 

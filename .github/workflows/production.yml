@@ -86,7 +86,7 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o ServerAliveInterval=15 \
             -o ServerAliveCountMax=4 \
-            root@94.184.25.40 "deploy $GITHUB_SHA"
+            root@194.117.64.181 "deploy $GITHUB_SHA"
       - name: Verify public health
         run: |
           curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors https://bjeyflow.space/healthz/

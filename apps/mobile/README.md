@@ -13,3 +13,9 @@ cd android
 ```
 
 The debug APK is at `app/build/outputs/apk/debug/app-debug.apk`. Debug signing is for testing only. A release requires a private signing key and distribution setup; never commit those credentials.
+
+The signed APK published at `frontend/public/downloads/BjeyFlow-android.apk`
+uses a separate release key. Keep an encrypted backup of that key and its
+password outside the repository: future Android updates must use the same key.
+The earlier debug build has a different signature and must be uninstalled
+before the release APK can be installed.

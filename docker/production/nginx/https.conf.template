@@ -65,6 +65,11 @@ server {
         try_files $uri =404;
         expires 1y;
     }
+    location = /downloads/BjeyFlow-android.apk {
+        try_files $uri =404;
+        default_type application/vnd.android.package-archive;
+        expires -1;
+    }
     location = /sw.js {
         try_files $uri =404;
         expires -1;

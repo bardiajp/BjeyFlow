@@ -185,7 +185,7 @@ export default function GoalsPage() {
                                 value={date}
                                 onChange={setDate}
                             />
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap justify-end gap-2">
                                 <Button
                                     type="submit"
                                     className="rounded-xl"
@@ -219,7 +219,7 @@ export default function GoalsPage() {
                     </h2>
                     <p className="mt-1 text-xs text-slate-400">A little progress adds up.</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
                     <label className="border-input bg-card text-foreground hover:border-primary/60 focus-within:ring-primary/30 flex h-9 cursor-pointer items-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors focus-within:ring-2 motion-reduce:transition-none">
                         <Checkbox checked={showArchived} onCheckedChange={setShowArchived} />
                         Show archived
@@ -280,7 +280,7 @@ export default function GoalsPage() {
                                 />
                             </div>
                             <div className="mt-4 flex items-start justify-between gap-3">
-                                <span className="text-primary-foreground font-semibold">
+                                <span className="text-primary-foreground min-w-0 font-semibold wrap-break-word">
                                     {item.title}
                                 </span>
                                 <span className="text-primary-foreground text-sm font-semibold tabular-nums">
@@ -313,15 +313,15 @@ export default function GoalsPage() {
                                     className="overflow-hidden"
                                 >
                                     <section className="grid gap-5 rounded-[22px] border border-slate-200/80 bg-white p-5 shadow-[0_4px_24px_-16px_#02304720] sm:p-6">
-                                        <div className="flex flex-wrap items-start justify-between gap-4">
-                                            <div className="min-w-0 flex-1">
+                                        <div className="flex flex-col items-start gap-4 sm:flex-row sm:justify-between">
+                                            <div className="w-full min-w-0 sm:flex-1">
                                                 <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold tracking-[0.14em] text-slate-400">
                                                     <Flag size={13} /> YOUR ROADMAP
                                                 </div>
-                                                <h2 className="text-primary-foreground text-xl font-semibold tracking-tight">
+                                                <h2 className="text-primary-foreground text-xl font-semibold tracking-tight wrap-break-word">
                                                     {goal.title}
                                                 </h2>
-                                                <p className="mt-1 text-sm text-slate-500">
+                                                <p className="mt-1 text-sm break-words text-slate-500">
                                                     {goal.description ||
                                                         'Every milestone brings you a little closer.'}
                                                 </p>
@@ -332,7 +332,7 @@ export default function GoalsPage() {
                                                     </p>
                                                 )}
                                             </div>
-                                            <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+                                            <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:ml-auto sm:w-auto">
                                                 <Button
                                                     variant="outline"
                                                     className="rounded-xl"
@@ -392,7 +392,7 @@ export default function GoalsPage() {
                                         </div>
                                         {!goal.is_archived && (
                                             <form
-                                                className="flex flex-wrap items-end gap-2"
+                                                className="flex flex-wrap items-end justify-end gap-2"
                                                 onSubmit={(event) => {
                                                     event.preventDefault();
                                                     mutation.mutate(
@@ -409,7 +409,7 @@ export default function GoalsPage() {
                                                 }}
                                             >
                                                 <LabeledInput
-                                                    containerClassName="min-w-0 flex-1"
+                                                    containerClassName="min-w-0 flex-1 basis-40"
                                                     label="Milestone title"
                                                     placeholder="New milestone"
                                                     value={milestoneTitle}
@@ -435,14 +435,14 @@ export default function GoalsPage() {
                                                 key={milestone.id}
                                                 className="grid gap-4 rounded-2xl border border-slate-200/70 bg-slate-50/60 p-4 sm:p-5"
                                             >
-                                                <div className="flex flex-wrap items-start justify-between gap-3">
-                                                    <div className="min-w-0 flex-1">
+                                                <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
+                                                    <div className="w-full min-w-0 sm:flex-1">
                                                         <strong className="text-primary-foreground flex items-start gap-2 text-sm">
                                                             <CheckCircle2
                                                                 size={16}
                                                                 className={`mt-0.5 shrink-0 ${milestone.is_completed ? 'text-emerald-500' : 'text-slate-300'}`}
                                                             />
-                                                            <span className="break-words">
+                                                            <span className="min-w-0 wrap-break-word">
                                                                 {milestone.title}
                                                             </span>
                                                         </strong>
@@ -455,7 +455,7 @@ export default function GoalsPage() {
                                                             {milestone.progress}%
                                                         </p>
                                                     </div>
-                                                    <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+                                                    <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:ml-auto sm:w-auto">
                                                         {!goal.is_archived &&
                                                             editingMilestone !== milestone.id && (
                                                                 <Button
@@ -510,7 +510,7 @@ export default function GoalsPage() {
                                                 {!goal.is_archived &&
                                                     editingMilestone === milestone.id && (
                                                         <form
-                                                            className="flex flex-wrap items-end gap-2"
+                                                            className="flex flex-wrap items-end justify-end gap-2"
                                                             onSubmit={(event) => {
                                                                 event.preventDefault();
                                                                 mutation.mutate(
@@ -531,7 +531,7 @@ export default function GoalsPage() {
                                                             }}
                                                         >
                                                             <LabeledInput
-                                                                containerClassName="min-w-0 flex-1"
+                                                                containerClassName="min-w-0 flex-1 basis-40"
                                                                 label="Milestone title"
                                                                 value={milestoneEditTitle}
                                                                 onChange={(event) =>
@@ -569,7 +569,7 @@ export default function GoalsPage() {
                                                             className="border-input/70 bg-card flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm text-slate-600"
                                                             key={task.id}
                                                         >
-                                                            <span>
+                                                            <span className="min-w-0 flex-1 wrap-break-word">
                                                                 {task.status === 'completed'
                                                                     ? '✓'
                                                                     : '○'}{' '}
@@ -580,7 +580,7 @@ export default function GoalsPage() {
                                                                     type="button"
                                                                     variant="outline"
                                                                     size="sm"
-                                                                    className="text-primary-foreground rounded-lg text-xs"
+                                                                    className="text-primary-foreground shrink-0 rounded-lg text-xs"
                                                                     onClick={() =>
                                                                         mutation.mutate({
                                                                             method: 'patch',
@@ -597,9 +597,9 @@ export default function GoalsPage() {
                                                         </div>
                                                     ))}
                                                 {!goal.is_archived && (
-                                                    <div className="flex flex-wrap items-end gap-2">
+                                                    <div className="flex flex-wrap items-end justify-end gap-2">
                                                         <LabeledSelect
-                                                            containerClassName="min-w-0 flex-1"
+                                                            containerClassName="min-w-0 flex-1 basis-40"
                                                             label={`Task for ${milestone.title}`}
                                                             placeholder="Choose a task to attach"
                                                             value={

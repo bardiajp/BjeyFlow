@@ -17,14 +17,15 @@ Production Docker/Nginx/TLS/mail deployment is documented in
 The web application in `frontend/` is the shared UI starting point for web/PWA,
 desktop and Android. Platform-specific projects have separate homes under
 `apps/`; the Electron desktop application is documented in `apps/desktop/README.md`.
-The React Native mobile app is documented in `apps/mobile/README.md`. The web app
+The Capacitor Android app is documented in `apps/mobile/README.md`. The web app
 is installable as a PWA and provides an offline fallback. The current backend,
 frontend and production deployment paths remain unchanged.
 
 ```
 apps/
   desktop/   Reserved for the desktop application
-  android/   Reserved for the Android application
+  android/   Android application documentation
+  mobile/    Capacitor Android application
 
 backend/
   config/    Django settings, URLs, WSGI/ASGI
@@ -71,6 +72,8 @@ frontend/    Web application and shared UI starting point for all platforms
 | `GET, PATCH /api/admin/settings/` | Workspace settings; only superusers may write |
 | `GET /api/admin/activity/` | Paginated administrator and sign-in audit trail |
 | `GET /api/admin/emails/` | Email acceptance/failure metadata, never message bodies or tokens |
+| `GET /api/admin/pending-signups/` | Recent signup requests, restricted to superusers |
+| `POST /api/admin/pending-signups/<id>/approve/` | Manually approve a signup after independently verifying identity, restricted to superusers and audited |
 | `GET /api/admin/email-templates/` | Administrator-only rendered email previews with sample data |
 | `GET /api/admin/errors/` | Sanitized server error categories |
 | `GET, POST /api/projects/` | List/create your projects |
@@ -93,6 +96,12 @@ Email templates has sandboxed desktop/mobile HTML previews and plain text using
 the actual outgoing template files with fictional data; previewing sends no mail.
 Administration tab content and its active indicator slide between selections,
 respecting reduced-motion preferences.
+The email list records submission to the configured backend, not later delivery
+from the mail queue or arrival in an inbox. Pending signups are available for
+manual review for 24 hours even if the ten-minute verification code has expired.
+The day streak counts consecutive UTC calendar days with a recorded task
+completion; reopening a task does not erase its earlier completion. History
+before XP completion events were recorded cannot be reconstructed.
 `staff` accounts can manage regular users but cannot inspect or modify other
 administrators, assign privileged roles, or change workspace-wide settings.
 `superuser` accounts can manage administrators and workspace settings. Self-disable,

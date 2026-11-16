@@ -9,6 +9,7 @@ import {
     Target,
     Trophy,
     Sparkles,
+    Flame,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
@@ -53,6 +54,7 @@ function LevelProgress({
                     today_xp: number;
                     today_league_eligible_xp: number;
                     daily_league_cap: number;
+                    day_streak: number;
                 }>('api/xp/')
             ).data,
         refetchInterval: 10_000,
@@ -180,6 +182,13 @@ function LevelProgress({
                     </AnimatePresence>
                 </span>
             </div>
+            <p
+                className="text-muted-foreground mt-3 flex items-center gap-1.5 text-[10px]"
+                title="Consecutive UTC days with a completed task, including yesterday if today has no activity yet."
+            >
+                <Flame size={13} className="text-orange-500" /> {xp.data.day_streak} day streak ·
+                UTC
+            </p>
             <div className="mt-3 flex justify-between gap-2 text-[10px] text-slate-500">
                 <span>Level {xp.data.level} progress</span>
                 <span className="tabular-nums">

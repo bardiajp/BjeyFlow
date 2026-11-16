@@ -1,6 +1,7 @@
-from datetime import datetime, time, timezone
+from datetime import datetime, time, timedelta, timezone
 
 from django.db.models import Sum
+from django.db.models.functions import TruncDate
 from django.utils import timezone as django_timezone
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -25,4 +26,14 @@ class XPSummaryView(APIView):
         eligible = score_entry_by_day(entry, now)[0].get(start.date(), 0) if entry else 0
         events = XPEvent.objects.filter(award__owner=request.user).select_related("award__task").order_by("-created_at")[:20]
         history = [{"id": event.id, "delta": event.delta, "created_at": event.created_at, "priority": event.award.priority, "task": event.award.task.title if event.award.task else None} for event in events]
-        return Response({"total_xp": total, **level_progress(total), "today_xp": today, "today_league_eligible_xp": eligible, "daily_league_cap": DAILY_CAP, "timezone": "UTC", "history": history})
+        days = XPEvent.objects.filter(award__owner=request.user, delta__gt=0).annotate(day=TruncDate("created_at", tzinfo=timezone.utc)).values_list("day", flat=True).distinct().order_by("-day")
+        expected = start.date()
+        streak = 0
+        for day in days:
+            if streak == 0 and day == expected - timedelta(days=1):
+                expected = day
+            if day != expected:
+                break
+            streak += 1
+            expected -= timedelta(days=1)
+        return Response({"total_xp": total, **level_progress(total), "today_xp": today, "today_league_eligible_xp": eligible, "daily_league_cap": DAILY_CAP, "day_streak": streak, "timezone": "UTC", "history": history})

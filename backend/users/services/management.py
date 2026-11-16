@@ -7,6 +7,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from administration.audit import record_event
 from users.models import User
+from core.models import Project
 
 
 class UserManagementService:
@@ -36,6 +37,7 @@ class UserManagementService:
             is_superuser=user.is_superuser,
             **data,
         )
+        Project.objects.create(owner=instance, name="My Project", icon="folder")
         record_event(
             "user.created",
             actor=actor,

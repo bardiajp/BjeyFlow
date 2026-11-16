@@ -79,6 +79,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp frontend/public/icons/icon-512.png release-assets/BjeyFlow-icon.png
+          cp apps/desktop/icon.png release-assets/BjeyFlow-icon.png
           cp apps/desktop/AppImage-README.txt release-assets/BjeyFlow-AppImage-README.txt
           gh release create "$GITHUB_REF_NAME" release-assets/BjeyFlow-linux-x64.AppImage release-assets/BjeyFlow-linux-x64.deb release-assets/BjeyFlow-Windows-x64-Setup.exe release-assets/BjeyFlow-Windows-x64-Portable.exe release-assets/BjeyFlow-icon.png release-assets/BjeyFlow-AppImage-README.txt --title "BjeyFlow Desktop ${GITHUB_REF_NAME#desktop-v}" --notes "Linux and Windows x86-64 builds. Requires an internet connection. Builds are not code-signed."

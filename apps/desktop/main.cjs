@@ -22,7 +22,7 @@ function createWindow() {
         backgroundColor: '#f6f8fa',
         icon: app.isPackaged
             ? path.join(process.resourcesPath, 'icon.png')
-            : path.join(__dirname, '../../frontend/public/icons/icon-512.png'),
+            : path.join(__dirname, 'icon.png'),
         autoHideMenuBar: true,
         webPreferences: {
             nodeIntegration: false,

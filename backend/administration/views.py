@@ -1,21 +1,24 @@
 from datetime import timedelta
 from math import ceil
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.conf import settings
 from django.db.models import Count
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 from django.template.loader import render_to_string
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError
 
 from core.models import Project, Task
-from users.models import User
+from users.models import SignupChallenge, User
 from users.permissions import HasAccountableRole, IsSystemAdministrator
 from users.services.push import TEMPLATES
+from users.services.signup import create_signup_user
 from .audit import record_event
 from .health import service_status
 from .models import AuditEvent, EmailEvent, SiteSettings, SystemEvent
@@ -142,6 +145,34 @@ class EmailsView(generics.ListAPIView):
     queryset = EmailEvent.objects.all()
     filterset_fields = ["status", "kind"]
     search_fields = ["recipient", "kind", "error_type"]
+
+
+class PendingSignupsView(APIView):
+    permission_classes = [IsSystemAdministrator]
+
+    def get(self, request):
+        pending = SignupChallenge.objects.filter(
+            last_sent_at__gte=timezone.now() - timedelta(hours=24)
+        ).order_by("-last_sent_at").values("id", "email", "username", "last_sent_at", "expires_at")[:100]
+        return Response(list(pending))
+
+
+class ApproveSignupView(APIView):
+    permission_classes = [IsSystemAdministrator]
+
+    def post(self, request, pk):
+        try:
+            with transaction.atomic():
+                challenge = get_object_or_404(
+                    SignupChallenge.objects.select_for_update().filter(
+                        last_sent_at__gte=timezone.now() - timedelta(hours=24)
+                    ), pk=pk
+                )
+                user = create_signup_user(challenge)
+                record_event("user.signup_manually_approved", actor=request.user, target=user.username, request=request)
+        except IntegrityError as exc:
+            raise ValidationError({"detail": "This username or email is already in use."}) from exc
+        return Response({"detail": "Account created. The user can sign in with their chosen password."})
 
 
 class ErrorsView(generics.ListAPIView):

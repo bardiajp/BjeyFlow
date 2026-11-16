@@ -17,12 +17,12 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
-from core.models import Project
 from core.utils.ip import get_ip
-from administration.models import SiteSettings, EmailEvent
+from administration.models import SiteSettings
 from administration.audit import record_event
 from users.services.email import send_account_email
-from users.models import SignupChallenge, User
+from users.services.signup import create_signup_user
+from users.models import SignupChallenge
 from users.serializers.auth import (
     SignupResendSerializer,
     SignupSerializer,
@@ -53,7 +53,7 @@ class SignupVerifyThrottle(SignupThrottle):
 class EmailDeliveryError(APIException):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     default_detail = (
-        "We could not send your verification email. Please try again shortly."
+        "We could not send your verification email. Your request is pending; contact an administrator or try again shortly."
     )
 
 
@@ -125,6 +125,7 @@ class SignupView(APIView):
         serializer = SignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        delivery_error = None
         try:
             with transaction.atomic():
                 previous = (
@@ -135,7 +136,7 @@ class SignupView(APIView):
                 if previous:
                     check_cooldown(previous)
                     previous.delete()
-                SignupChallenge.objects.filter(expires_at__lt=timezone.now()).delete()
+                SignupChallenge.objects.filter(last_sent_at__lt=timezone.now() - timedelta(hours=24)).delete()
                 challenge = SignupChallenge(
                     email=data["email"],
                     username=data["username"],
@@ -152,22 +153,18 @@ class SignupView(APIView):
                         )
                     },
                 )
-                issue_code(challenge)
-        except EmailDeliveryError as exc:
-            EmailEvent.objects.create(
-                kind="signup",
-                recipient=data["email"],
-                status="failed",
-                backend=settings.EMAIL_BACKEND,
-                error_type=type(exc.__cause__).__name__,
-            )
-            raise
+                try:
+                    issue_code(challenge)
+                except EmailDeliveryError as exc:
+                    delivery_error = exc
         except IntegrityError as exc:
             raise ValidationError(
                 {
                     "email": "Another verification is already in progress. Please try again shortly."
                 }
             ) from exc
+        if delivery_error:
+            raise delivery_error
         return Response(challenge_response(challenge), status=status.HTTP_201_CREATED)
 
 
@@ -179,6 +176,7 @@ class SignupResendView(APIView):
     def post(self, request):
         serializer = SignupResendSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        delivery_error = None
         try:
             with transaction.atomic():
                 challenge = get_object_or_404(
@@ -186,16 +184,14 @@ class SignupResendView(APIView):
                     pk=serializer.validated_data["challenge_id"],
                 )
                 check_cooldown(challenge)
-                issue_code(challenge)
-        except EmailDeliveryError as exc:
-            EmailEvent.objects.create(
-                kind="signup",
-                recipient=challenge.email,
-                status="failed",
-                backend=settings.EMAIL_BACKEND,
-                error_type=type(exc.__cause__).__name__,
-            )
-            raise
+                try:
+                    issue_code(challenge)
+                except EmailDeliveryError as exc:
+                    delivery_error = exc
+        except IntegrityError as exc:
+            raise ValidationError({"detail": "Could not update this verification request."}) from exc
+        if delivery_error:
+            raise delivery_error
         return Response(challenge_response(challenge))
 
 
@@ -229,23 +225,7 @@ class SignupVerifyView(APIView):
                     challenge.attempts += 1
                     challenge.save(update_fields=["attempts"])
                 else:
-                    profile = challenge.profile.copy()
-                    workspace_name = profile.pop("workspace_name")
-                    user = User.objects.create(
-                        username=challenge.username,
-                        email=challenge.email,
-                        password=challenge.password_hash,
-                        display_name=f"{profile['first_name']} {profile['last_name']}"[
-                            :150
-                        ],
-                        is_staff=False,
-                        is_superuser=False,
-                        **profile,
-                    )
-                    Project.objects.create(
-                        owner=user, name=workspace_name, icon="folder"
-                    )
-                    challenge.delete()
+                    user = create_signup_user(challenge)
                     record_event("user.registered", actor=user, request=request)
         except IntegrityError as exc:
             raise ValidationError(

@@ -1,0 +1,9 @@
+{
+  "appId": "space.bjeyflow.mobile",
+  "appName": "BjeyFlow",
+  "webDir": "www",
+  "server": {
+    "url": "https://bjeyflow.space/",
+    "cleartext": false
+  }
+}

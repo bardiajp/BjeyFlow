@@ -79,11 +79,12 @@ export async function saveSiteSettings(body: Omit<SiteSettings, 'updated_at'>) {
 export async function getAdminEvents(
     kind: 'activity' | 'emails' | 'errors',
     page: number,
-    search: string
+    search: string,
+    status = ''
 ) {
     return (
         await axiosInstance.get<Pagination<AdminEvent[]>>(`api/admin/${kind}/`, {
-            params: { page, search },
+            params: { page, search, ...(status ? { status } : {}) },
         })
     ).data;
 }

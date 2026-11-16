@@ -10,6 +10,8 @@ from .views import (
     PublicSettingsView,
     SiteSettingsView,
     PushTemplatesView,
+    PendingSignupsView,
+    ApproveSignupView,
 )
 
 urlpatterns = [
@@ -27,5 +29,7 @@ urlpatterns = [
     path("health/", HealthView.as_view(), name="admin-health"),
     path("activity/", ActivityView.as_view(), name="admin-activity"),
     path("emails/", EmailsView.as_view(), name="admin-emails"),
+    path("pending-signups/", PendingSignupsView.as_view(), name="admin-pending-signups"),
+    path("pending-signups/<uuid:pk>/approve/", ApproveSignupView.as_view(), name="admin-approve-signup"),
     path("errors/", ErrorsView.as_view(), name="admin-errors"),
 ]

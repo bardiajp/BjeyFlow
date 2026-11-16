@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from users.services.management import user_management_service
+from core.services.xp import level_progress
+from django.db.models import Sum
 
 User = get_user_model()
 
@@ -11,6 +13,7 @@ ROLE_CHOICES = ("superuser", "staff", "user")
 class ManagedUserSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(choices=ROLE_CHOICES)
     password = serializers.CharField(write_only=True, required=False, min_length=8)
+    level = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -27,8 +30,16 @@ class ManagedUserSerializer(serializers.ModelSerializer):
             "password",
             "date_joined",
             "last_login",
+            "level",
         )
-        read_only_fields = ("id", "date_joined", "last_login")
+        read_only_fields = ("id", "date_joined", "last_login", "level")
+
+    def get_level(self, user):
+        if hasattr(user, "active_xp"):
+            total = user.active_xp or 0
+        else:
+            total = user.task_xp.filter(active=True).aggregate(total=Sum("amount"))["total"] or 0
+        return level_progress(total)["level"]
 
     def validate_email(self, value):
         value = value.lower()

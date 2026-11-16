@@ -1,5 +1,6 @@
 from smtplib import SMTPException
 
+from django.db.models import Q, Sum
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, ValidationError
@@ -26,7 +27,7 @@ class UserManagementViewSet(viewsets.ModelViewSet):
     filterset_fields = ("is_active", "is_staff", "is_superuser")
 
     def get_queryset(self):
-        queryset = User.objects.all()
+        queryset = User.objects.annotate(active_xp=Sum("task_xp__amount", filter=Q(task_xp__active=True)))
         return (
             queryset
             if self.request.user.is_superuser

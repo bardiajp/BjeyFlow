@@ -10,6 +10,7 @@ export interface PanelUser extends Pick<
     is_active: boolean;
     date_joined: string;
     last_login: string | null;
+    level: number;
 }
 
 export type CreatePanelUser = Pick<PanelUser, 'username' | 'display_name' | 'role' | 'email'> & {

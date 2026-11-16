@@ -28,7 +28,15 @@ import { usePreferences } from '@/store/use-preferences';
 import { useQuery } from '@tanstack/react-query';
 import { axiosInstance } from '@/lib/api';
 
-function LeagueXP({ onNavigate }: { onNavigate?: () => void }) {
+function LevelProgress({
+    onNavigate,
+    joined,
+    collapsed,
+}: {
+    onNavigate?: () => void;
+    joined: boolean;
+    collapsed: boolean;
+}) {
     const reduceMotion = useReducedMotion();
     const [change, setChange] = useState<{ delta: number; levelUp: boolean } | null>(null);
     const previous = useRef<{ total: number; level: number } | null>(null);
@@ -65,7 +73,12 @@ function LeagueXP({ onNavigate }: { onNavigate?: () => void }) {
         };
     }, [xp.data?.total_xp, xp.data?.level]);
 
-    if (!xp.data) return null;
+    if (!xp.data)
+        return (
+            <div className="text-muted-foreground mb-4 px-1 text-center text-[10px]" role="status">
+                {xp.isError ? 'Level unavailable' : 'Loading level…'}
+            </div>
+        );
     const leagueProgress = Math.min(
         100,
         (xp.data.today_league_eligible_xp / xp.data.daily_league_cap) * 100
@@ -95,6 +108,25 @@ function LeagueXP({ onNavigate }: { onNavigate?: () => void }) {
                       bar: 'bg-brand',
                       border: 'border-primary/40',
                   };
+    if (collapsed) {
+        return (
+            <Link
+                to="/xp"
+                onClick={onNavigate}
+                title={`Level ${xp.data.level}`}
+                aria-label={`Level ${xp.data.level}, ${xp.data.level_xp} of ${xp.data.level_required_xp} XP to next level`}
+                className={cn(
+                    'focus-visible:ring-primary mx-auto mb-4 flex size-10 shrink-0 flex-col items-center justify-center rounded-xl focus-visible:ring-2',
+                    colors.badge
+                )}
+            >
+                <span className="text-[8px] leading-none font-bold tracking-wide">LVL</span>
+                <span className="text-base leading-tight font-bold tabular-nums">
+                    {xp.data.level}
+                </span>
+            </Link>
+        );
+    }
     return (
         <div
             className={cn(
@@ -170,18 +202,22 @@ function LeagueXP({ onNavigate }: { onNavigate?: () => void }) {
                     style={{ width: `${levelProgress}%` }}
                 />
             </div>
-            <div className="mt-3 flex justify-between gap-2 text-[10px] text-slate-500">
-                <span>League today · UTC</span>
-                <span className="tabular-nums">
-                    {xp.data.today_league_eligible_xp} / {xp.data.daily_league_cap} XP
-                </span>
-            </div>
-            <div className="bg-primary/15 mt-1.5 h-1.5 overflow-hidden rounded-full">
-                <div
-                    className="bg-brand h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"
-                    style={{ width: `${leagueProgress}%` }}
-                />
-            </div>
+            {joined && (
+                <>
+                    <div className="mt-3 flex justify-between gap-2 text-[10px] text-slate-500">
+                        <span>League today · UTC</span>
+                        <span className="tabular-nums">
+                            {xp.data.today_league_eligible_xp} / {xp.data.daily_league_cap} XP
+                        </span>
+                    </div>
+                    <div className="bg-primary/15 mt-1.5 h-1.5 overflow-hidden rounded-full">
+                        <div
+                            className="bg-brand h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"
+                            style={{ width: `${leagueProgress}%` }}
+                        />
+                    </div>
+                </>
+            )}
             <Link
                 to="/xp"
                 onClick={onNavigate}
@@ -255,9 +291,12 @@ export function AppSidebar({
                     </span>
                 </span>
             </Link>
-            {!collapsed && league.data?.joined && (
-                <LeagueXP key={user?.id} onNavigate={onNavigate} />
-            )}
+            <LevelProgress
+                key={user?.id}
+                onNavigate={onNavigate}
+                joined={!!league.data?.joined}
+                collapsed={collapsed}
+            />
             <nav className="grid w-full shrink-0 gap-1" aria-label="Task views">
                 <NavItem
                     to="/inbox"

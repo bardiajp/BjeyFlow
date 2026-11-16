@@ -221,6 +221,12 @@ export default function UsersList({
                                     scope="col"
                                     className="px-4 py-3 text-[10px] font-medium tracking-wider uppercase"
                                 >
+                                    Level
+                                </th>
+                                <th
+                                    scope="col"
+                                    className="px-4 py-3 text-[10px] font-medium tracking-wider uppercase"
+                                >
                                     Last sign-in
                                 </th>
                                 <th
@@ -303,6 +309,11 @@ export default function UsersList({
                                                 />
                                                 {user.is_active ? 'Active' : 'Disabled'}
                                             </p>
+                                        </td>
+                                        <td className="px-4 py-4 align-middle">
+                                            <span className="bg-primary/15 text-primary-foreground inline-flex rounded-lg px-2.5 py-1 text-[11px] font-semibold tabular-nums">
+                                                LVL {user.level}
+                                            </span>
                                         </td>
                                         <td className="px-4 py-4 align-middle whitespace-nowrap">
                                             {user.last_login ? (

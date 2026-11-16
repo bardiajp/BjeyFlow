@@ -1,26 +1,44 @@
-import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox"
-import { cn } from "@/lib/utils"
-import { CheckIcon } from "lucide-react"
+import { Checkbox as CheckboxPrimitive } from '@base-ui/react/checkbox';
+import { Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
-  return (
-    <CheckboxPrimitive.Root
-      data-slot="checkbox"
-      className={cn(
-        "peer relative flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input transition-colors outline-none group-has-disabled/field:opacity-50 group-has-[:focus-visible]/field-label:ring-0 group-has-[:focus-visible]/field-label:not-data-checked:border-input after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 aria-invalid:aria-checked:border-primary dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground group-has-[:focus-visible]/field-label:data-checked:border-primary dark:data-checked:bg-primary",
-        className
-      )}
-      {...props}
-    >
-      <CheckboxPrimitive.Indicator
-        data-slot="checkbox-indicator"
-        className="grid place-content-center text-current transition-none [&>svg]:size-3.5"
-      >
-        <CheckIcon
-        />
-      </CheckboxPrimitive.Indicator>
-    </CheckboxPrimitive.Root>
-  )
+function Checkbox({
+    className,
+    variant = 'default',
+    children,
+    ...props
+}: CheckboxPrimitive.Root.Props & {
+    variant?: 'default' | 'task' | 'switch';
+}) {
+    return (
+        <CheckboxPrimitive.Root
+            data-slot="checkbox"
+            className={cn(
+                'group focus-visible:ring-primary/35 relative inline-flex shrink-0 items-center justify-center transition-[background-color,border-color,box-shadow] duration-200 outline-none after:absolute after:-inset-2 focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none',
+                variant === 'default' &&
+                    'border-input bg-card hover:border-primary/70 data-checked:border-brand data-checked:bg-brand size-5 rounded-[7px] border shadow-[0_1px_3px_#02304712] data-checked:text-white',
+                variant === 'task' &&
+                    'border-primary size-6 rounded-full border disabled:opacity-100',
+                variant === 'switch' &&
+                    'border-input bg-accent data-checked:bg-brand h-6 w-11 rounded-full border',
+                className
+            )}
+            {...props}
+        >
+            {variant === 'default' && (
+                <CheckboxPrimitive.Indicator className="grid place-content-center transition-transform duration-200 data-ending-style:scale-50 data-starting-style:scale-50 motion-reduce:transition-none">
+                    <Check className="size-3.5" strokeWidth={2.6} />
+                </CheckboxPrimitive.Indicator>
+            )}
+            {variant === 'switch' && (
+                <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-0.5 size-[18px] rounded-full bg-[#ffffff] shadow-sm transition-transform duration-200 group-data-checked:translate-x-5 motion-reduce:transition-none"
+                />
+            )}
+            {children}
+        </CheckboxPrimitive.Root>
+    );
 }
 
-export { Checkbox }
+export { Checkbox };

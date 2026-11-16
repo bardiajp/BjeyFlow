@@ -27,6 +27,36 @@ TEMPLATES = {
         "title": "Focus session complete",
         "body": "Nice work. Take a short break—you earned it.",
     },
+    "league_week_started": {
+        "name": "League week started",
+        "description": "Sent when a new league week begins.",
+        "title": "A fresh week, a little more flow ✨",
+        "body": "Your league is ready. Every small step counts.",
+    },
+    "league_week_ending": {
+        "name": "League week ending",
+        "description": "Sent during the final day of the league week.",
+        "title": "One more day to make waves 🌊",
+        "body": "Your league week is almost over. See where you stand.",
+    },
+    "league_promoted": {
+        "name": "League promotion",
+        "description": "Sent after a league promotion.",
+        "title": "You moved up! 🏆",
+        "body": "Your progress paid off. Your next league awaits.",
+    },
+    "league_demoted": {
+        "name": "League result: new start",
+        "description": "Sent when a league week ends with a demotion.",
+        "title": "A fresh start is here 🌱",
+        "body": "A new league week is ready. Every step still matters.",
+    },
+    "league_stay": {
+        "name": "League weekly result",
+        "description": "Sent when a league week ends without a tier change.",
+        "title": "Your week in review ✨",
+        "body": "Your league results are in. Take a look at your progress.",
+    },
 }
 
 

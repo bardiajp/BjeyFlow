@@ -20,13 +20,13 @@ export function NotificationSettings() {
                 Gentle reminders
             </h2>
             <p className="text-muted-foreground text-[11px] leading-relaxed">
-                Task reminders can reach this device even when BjeyFlow is closed. Tasks without a
+                Task reminders and league updates can reach this device even when BjeyFlow is closed. Tasks without a
                 time are due at 09:00 in your selected time zone. On iPhone, install BjeyFlow to the
                 Home Screen first. Delivery depends on device and network settings.
             </p>
             <PreferenceToggle
-                label="Task reminders"
-                description="Pause or resume reminders across your account. Device permissions are managed separately."
+                label="Task and league notifications"
+                description="Pause or resume notifications across your account. Device permissions are managed separately."
                 checked={preferences.browserNotifications}
                 disabled={!push.enabled}
                 onChange={(value) => preferences.setPreference('browserNotifications', value)}

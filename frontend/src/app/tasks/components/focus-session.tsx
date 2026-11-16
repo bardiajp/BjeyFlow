@@ -6,9 +6,13 @@ import { toast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { usePreferences } from '@/store/use-preferences';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
+import { useAppData } from '../hooks/use-app-data';
+import { LabeledSelect } from '@/components/form/labeled-select';
 
 export function FocusSession() {
     const push = usePushNotifications();
+    const { tasks } = useAppData();
+    const [taskId, setTaskId] = useState('');
     const defaultMinutes = usePreferences((state) => state.focusMinutes);
     const [minutes, setMinutes] = useState(String(defaultMinutes));
     const [durationMinutes, setDurationMinutes] = useState(defaultMinutes);
@@ -93,6 +97,22 @@ export function FocusSession() {
                 <p className="mt-4 text-center text-[11px] text-slate-400">
                     Give one thing your full attention.
                 </p>
+                <LabeledSelect
+                    containerClassName="mt-3"
+                    label="Focus on (optional)"
+                    value={taskId || 'none'}
+                    disabled={started}
+                    onValueChange={(value) => setTaskId(value === 'none' ? '' : value)}
+                    options={[
+                        { value: 'none', label: 'No task selected' },
+                        ...(tasks.data ?? [])
+                            .filter((task) => task.status !== 'completed')
+                            .map((task) => ({
+                                value: task.id,
+                                label: `${task.identifier} · ${task.title}`,
+                            })),
+                    ]}
+                />
                 <div className="relative mx-auto my-3 flex size-40 max-w-full items-center justify-center sm:my-4 sm:size-48">
                     <svg
                         viewBox="0 0 200 200"

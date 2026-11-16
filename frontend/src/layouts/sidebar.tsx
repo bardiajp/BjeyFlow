@@ -1,4 +1,17 @@
-import { CalendarDays, CircleCheck, Pencil, Inbox, Plus, Trash2, ShieldCheck } from 'lucide-react';
+import {
+    CalendarDays,
+    CircleCheck,
+    Pencil,
+    Inbox,
+    Plus,
+    Trash2,
+    ShieldCheck,
+    Target,
+    Trophy,
+    Sparkles,
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Link } from 'react-router';
 import { useAppData } from '@/app/tasks/hooks/use-app-data';
 import { NavItem } from '@/components/navigation/nav-item';
@@ -12,6 +25,173 @@ import { WeatherIcon } from '@/components/weather-icon';
 import { cn } from '@/lib/utils';
 import { useSiteSettings } from '@/hooks/use-site-settings';
 import { usePreferences } from '@/store/use-preferences';
+import { useQuery } from '@tanstack/react-query';
+import { axiosInstance } from '@/lib/api';
+
+function LeagueXP({ onNavigate }: { onNavigate?: () => void }) {
+    const reduceMotion = useReducedMotion();
+    const [change, setChange] = useState<{ delta: number; levelUp: boolean } | null>(null);
+    const previous = useRef<{ total: number; level: number } | null>(null);
+    const xp = useQuery({
+        queryKey: ['xp'],
+        queryFn: async () =>
+            (
+                await axiosInstance.get<{
+                    total_xp: number;
+                    level: number;
+                    level_xp: number;
+                    level_required_xp: number;
+                    next_level_total_xp: number;
+                    today_xp: number;
+                    today_league_eligible_xp: number;
+                    daily_league_cap: number;
+                }>('api/xp/')
+            ).data,
+        refetchInterval: 10_000,
+    });
+
+    useEffect(() => {
+        if (!xp.data) return;
+        const { total_xp: total, level } = xp.data;
+        const delta = previous.current === null ? 0 : total - previous.current.total;
+        const levelUp = previous.current !== null && level > previous.current.level;
+        previous.current = { total, level };
+        if (!delta) return;
+        const show = window.setTimeout(() => setChange({ delta, levelUp }), 0);
+        const hide = window.setTimeout(() => setChange(null), 4000);
+        return () => {
+            window.clearTimeout(show);
+            window.clearTimeout(hide);
+        };
+    }, [xp.data?.total_xp, xp.data?.level]);
+
+    if (!xp.data) return null;
+    const leagueProgress = Math.min(
+        100,
+        (xp.data.today_league_eligible_xp / xp.data.daily_league_cap) * 100
+    );
+    const levelProgress = Math.min(100, (xp.data.level_xp / xp.data.level_required_xp) * 100);
+    const colors =
+        xp.data.level >= 20
+            ? {
+                  badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200',
+                  bar: 'bg-amber-500',
+                  border: 'border-amber-400/50',
+              }
+            : xp.data.level >= 10
+              ? {
+                    badge: 'bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-200',
+                    bar: 'bg-violet-500',
+                    border: 'border-violet-400/50',
+                }
+              : xp.data.level >= 5
+                ? {
+                      badge: 'bg-emerald-100 text-emerald-700',
+                      bar: 'bg-emerald-600',
+                      border: 'border-emerald-500/40',
+                  }
+                : {
+                      badge: 'bg-primary/20 text-primary-foreground',
+                      bar: 'bg-brand',
+                      border: 'border-primary/40',
+                  };
+    return (
+        <div
+            className={cn(
+                'surface-wash relative mb-4 overflow-hidden rounded-2xl border p-3',
+                colors.border
+            )}
+        >
+            <div className="flex items-center gap-2">
+                <span
+                    className={cn(
+                        'flex size-10 shrink-0 flex-col items-center justify-center rounded-xl',
+                        colors.badge
+                    )}
+                >
+                    <span className="text-[8px] leading-none font-bold tracking-wide">LVL</span>
+                    <span className="text-base leading-tight font-bold tabular-nums">
+                        {xp.data.level}
+                    </span>
+                </span>
+                <div className="min-w-0 flex-1">
+                    <p className="text-muted-foreground text-[10px]">Personal XP</p>
+                    <p className="text-primary-foreground text-base leading-tight font-semibold tabular-nums">
+                        {xp.data.total_xp}
+                    </p>
+                </div>
+                <span aria-live="polite" aria-atomic="true" className="min-w-0">
+                    <AnimatePresence mode="wait">
+                        {change !== null && (
+                            <motion.span
+                                key={`${change.delta}-${xp.data.total_xp}`}
+                                initial={reduceMotion ? false : { opacity: 0, y: 5, scale: 0.85 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -5 }}
+                                className={cn(
+                                    'block rounded-lg px-2 py-1 text-xs font-semibold tabular-nums',
+                                    change.delta > 0
+                                        ? 'bg-emerald-100 text-emerald-700'
+                                        : 'bg-orange-100 text-orange-700'
+                                )}
+                            >
+                                {change.levelUp && (
+                                    <>
+                                        <Sparkles size={12} className="mr-1 inline" />
+                                        Level up! ·{' '}
+                                    </>
+                                )}
+                                {change.delta > 0 ? '+' : ''}
+                                {change.delta} XP
+                            </motion.span>
+                        )}
+                    </AnimatePresence>
+                </span>
+            </div>
+            <div className="mt-3 flex justify-between gap-2 text-[10px] text-slate-500">
+                <span>Level {xp.data.level} progress</span>
+                <span className="tabular-nums">
+                    {xp.data.level_xp} / {xp.data.level_required_xp} XP
+                </span>
+            </div>
+            <div
+                role="progressbar"
+                aria-label={`Level ${xp.data.level} progress`}
+                aria-valuemin={0}
+                aria-valuemax={xp.data.level_required_xp}
+                aria-valuenow={xp.data.level_xp}
+                className="bg-primary/15 mt-1.5 h-1.5 overflow-hidden rounded-full"
+            >
+                <div
+                    className={cn(
+                        'h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none',
+                        colors.bar
+                    )}
+                    style={{ width: `${levelProgress}%` }}
+                />
+            </div>
+            <div className="mt-3 flex justify-between gap-2 text-[10px] text-slate-500">
+                <span>League today · UTC</span>
+                <span className="tabular-nums">
+                    {xp.data.today_league_eligible_xp} / {xp.data.daily_league_cap} XP
+                </span>
+            </div>
+            <div className="bg-primary/15 mt-1.5 h-1.5 overflow-hidden rounded-full">
+                <div
+                    className="bg-brand h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"
+                    style={{ width: `${leagueProgress}%` }}
+                />
+            </div>
+            <Link
+                to="/xp"
+                onClick={onNavigate}
+                className="text-primary-foreground focus-visible:ring-primary mt-2 inline-block rounded text-[10px] font-medium hover:underline focus-visible:ring-2"
+            >
+                XP history
+            </Link>
+        </div>
+    );
+}
 
 export function AppSidebar({
     today,
@@ -29,6 +209,11 @@ export function AppSidebar({
     const { projects, tasks } = useAppData();
     const user = useUserStore((state) => state.user);
     const site = useSiteSettings();
+    const league = useQuery({
+        queryKey: ['league'],
+        queryFn: async () => (await axiosInstance.get<{ joined: boolean }>('api/league/')).data,
+        refetchInterval: 30_000,
+    });
     const name = user?.display_name || user?.username || 'Your account';
     const initials = name
         .split(/\s+/)
@@ -70,6 +255,9 @@ export function AppSidebar({
                     </span>
                 </span>
             </Link>
+            {!collapsed && league.data?.joined && (
+                <LeagueXP key={user?.id} onNavigate={onNavigate} />
+            )}
             <nav className="grid w-full shrink-0 gap-1" aria-label="Task views">
                 <NavItem
                     to="/inbox"
@@ -107,6 +295,20 @@ export function AppSidebar({
                     collapsed={collapsed}
                     icon={CircleCheck}
                     label="Completed"
+                    onNavigate={onNavigate}
+                />
+                <NavItem
+                    to="/goals"
+                    collapsed={collapsed}
+                    icon={Target}
+                    label="Goals"
+                    onNavigate={onNavigate}
+                />
+                <NavItem
+                    to="/league"
+                    collapsed={collapsed}
+                    icon={Trophy}
+                    label="League"
                     onNavigate={onNavigate}
                 />
                 <NavItem

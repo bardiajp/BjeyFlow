@@ -97,7 +97,6 @@ export default function LoginForm() {
                         render={({ field }) => (
                             <Checkbox
                                 id="remember-me"
-                                className="h-[17px] w-[17px]"
                                 name={field.name}
                                 checked={field.value ?? false}
                                 onCheckedChange={(checked) => field.onChange(checked)}

@@ -5,6 +5,7 @@ export const taskSchema = z
         title: z.string().trim().min(1, 'What would you like to do?').max(255),
         project: z.uuid('Choose a project.'),
         description: z.string().trim(),
+        completion_note: z.string().trim(),
         priority: z.enum(['low', 'normal', 'high', 'urgent']),
         status: z.enum(['todo', 'in_progress', 'completed']),
         due_date: z.union([z.iso.date(), z.literal('')]),

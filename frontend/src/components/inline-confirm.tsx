@@ -95,10 +95,10 @@ export function InlineConfirm({
                 <Button
                     ref={trigger}
                     type="button"
-                    variant="ghost"
+                    variant={tone === 'danger' ? 'destructive' : 'ghost'}
                     className={cn(
-                        'h-full w-full justify-end gap-2 rounded-xl text-xs focus-visible:ring-2 focus-visible:ring-[#8ecae6] focus-visible:ring-inset',
-                        tone === 'danger' ? 'text-destructive' : 'text-primary-foreground'
+                        'h-full w-full justify-center gap-2 rounded-xl text-xs focus-visible:ring-2 focus-visible:ring-[#8ecae6] focus-visible:ring-inset',
+                        'text-primary-foreground'
                     )}
                     aria-label={label}
                     aria-expanded={open}
@@ -154,8 +154,10 @@ export function InlineConfirm({
                 <Button
                     type="button"
                     className={cn(
-                        'size-7 shrink-0 rounded-lg p-0 text-white',
-                        tone === 'danger' ? 'bg-destructive' : 'bg-brand'
+                        'size-7 shrink-0 rounded-lg p-0',
+                        tone === 'danger'
+                            ? 'bg-secondary text-secondary-foreground'
+                            : 'bg-brand text-white'
                     )}
                     aria-label={error !== null ? `Retry: ${confirmLabel}` : confirmLabel}
                     aria-describedby={descriptionId}

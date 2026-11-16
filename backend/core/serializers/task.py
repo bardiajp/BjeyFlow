@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from core.models import Project, Task
+from core.models import Milestone, Project, Task
 from core.serializers.subtask import SubTaskCreateSerializer, SubTaskSerializer
 from core.services.task import task_service
 
@@ -11,6 +11,9 @@ class TaskSerializer(serializers.ModelSerializer):
         queryset=Project.objects.none(), pk_field=serializers.UUIDField()
     )
     project_name = serializers.CharField(source="project.name", read_only=True)
+    milestone = serializers.PrimaryKeyRelatedField(
+        queryset=Milestone.objects.none(), pk_field=serializers.UUIDField(), allow_null=True, required=False
+    )
     project_icon = serializers.CharField(source="project.icon", read_only=True)
     subtasks = SubTaskSerializer(many=True, read_only=True)
     subtasks_count = serializers.SerializerMethodField()
@@ -21,12 +24,14 @@ class TaskSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "project",
+            "milestone",
             "project_name",
             "project_icon",
             "title",
             "number",
             "identifier",
             "description",
+            "completion_note",
             "status",
             "priority",
             "due_date",
@@ -55,6 +60,7 @@ class TaskSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if request and request.user.is_authenticated:
             fields["project"].queryset = Project.objects.filter(owner=request.user)
+            fields["milestone"].queryset = Milestone.objects.filter(goal__owner=request.user)
         return fields
 
     def validate_project(self, project):
@@ -67,6 +73,9 @@ class TaskSerializer(serializers.ModelSerializer):
         return project
 
     def validate(self, attrs):
+        milestone = attrs.get("milestone")
+        if milestone and milestone.goal.is_archived and (self.instance is None or self.instance.milestone_id != milestone.pk):
+            raise serializers.ValidationError({"milestone": "Cannot add tasks to an archived goal."})
         due_date = attrs.get("due_date", getattr(self.instance, "due_date", None))
         due_time = attrs.get("due_time", getattr(self.instance, "due_time", None))
         if due_time is not None and due_date is None:

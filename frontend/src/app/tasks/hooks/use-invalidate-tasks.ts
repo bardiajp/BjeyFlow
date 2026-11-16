@@ -6,5 +6,7 @@ export function useInvalidateTasks() {
         Promise.all([
             client.invalidateQueries({ queryKey: ['tasks'] }),
             client.invalidateQueries({ queryKey: ['projects'] }),
+            client.invalidateQueries({ queryKey: ['xp'] }),
+            client.invalidateQueries({ queryKey: ['league'] }),
         ]);
 }

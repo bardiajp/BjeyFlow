@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export function PreferenceToggle({
     label,
@@ -26,13 +27,12 @@ export function PreferenceToggle({
                     {description}
                 </span>
             </span>
-            <input
-                type="checkbox"
+            <Checkbox
+                variant="switch"
                 role="switch"
                 checked={checked}
                 disabled={disabled}
-                onChange={(event) => onChange(event.target.checked)}
-                className="flow-control border-input bg-accent checked:bg-brand focus-visible:ring-primary relative h-6 w-11 shrink-0 appearance-none rounded-full border transition-colors outline-none after:absolute after:top-0.5 after:left-0.5 after:size-[18px] after:rounded-full after:bg-white after:shadow-sm after:transition-transform checked:after:translate-x-5 focus-visible:ring-2"
+                onCheckedChange={onChange}
             />
         </label>
     );

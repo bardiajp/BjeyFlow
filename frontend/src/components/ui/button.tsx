@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import Loading from '@/components/loading';
 
 const buttonVariants = cva(
-    'flow-control inline-flex items-center justify-center rounded-sm border border-transparent bg-clip-padding text-sm font-medium outline-none select-none disabled:pointer-events-none disabled:opacity-50',
+    'flow-control inline-flex items-center justify-center rounded-xl border border-transparent bg-clip-padding text-sm font-medium outline-none select-none disabled:pointer-events-none disabled:opacity-50',
     {
         variants: {
             variant: {

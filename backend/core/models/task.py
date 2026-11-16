@@ -19,9 +19,13 @@ class Task(BaseModel):
     project = models.ForeignKey(
         "core.Project", on_delete=models.PROTECT, related_name="tasks"
     )
+    milestone = models.ForeignKey(
+        "core.Milestone", on_delete=models.SET_NULL, related_name="tasks", null=True, blank=True
+    )
     title = models.CharField(max_length=255)
     number = models.PositiveBigIntegerField(editable=False)
     description = models.TextField(blank=True)
+    completion_note = models.TextField(blank=True)
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.TODO
     )

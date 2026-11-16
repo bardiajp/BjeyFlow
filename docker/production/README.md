@@ -78,6 +78,14 @@ automatically until this timer (or an equivalent scheduler) is enabled. Inspect
 monitor disk usage and maintain a tested, access-controlled off-server copy.
 Do not expose maintenance or backup execution as public HTTP endpoints.
 
+The existing `push-worker` also runs `python manage.py advance_leagues` once per
+minute. This closes past UTC league weeks, records their standings and creates
+the current week. League API requests also catch up missed weeks after downtime.
+The worker must stay running for automatic rollover when nobody opens the app.
+It also sends league week and result notifications to registered devices when
+browser notifications are enabled. League notifications respect quiet hours;
+they are retried while their notification window remains open.
+
 Health checks authenticate to SMTP without sending a message. Console or custom
 email backends are labeled explicitly. Email events report backend acceptance
 or failure only; they do not claim external inbox delivery. In development,

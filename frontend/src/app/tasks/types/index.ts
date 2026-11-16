@@ -17,10 +17,12 @@ export interface Task {
     number: number;
     identifier: string;
     project: string;
+    milestone: string | null;
     project_name: string;
     project_icon: ProjectIconName;
     title: string;
     description: string;
+    completion_note: string;
     status: TaskStatus;
     priority: TaskPriority;
     due_date: string | null;
@@ -49,7 +51,14 @@ export interface TaskFilters {
 
 export type TaskInput = Pick<
     Task,
-    'project' | 'title' | 'description' | 'priority' | 'status' | 'due_date' | 'due_time'
+    | 'project'
+    | 'title'
+    | 'description'
+    | 'completion_note'
+    | 'priority'
+    | 'status'
+    | 'due_date'
+    | 'due_time'
 >;
 export type CreateTask = TaskInput & {
     subtasks: { title: string; position: number; is_completed?: boolean }[];

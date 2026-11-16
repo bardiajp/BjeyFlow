@@ -90,6 +90,7 @@ export function TaskForm({
             title: task?.title ?? '',
             project: task?.project ?? defaultProject,
             description: task?.description ?? '',
+            completion_note: task?.completion_note ?? '',
             priority: task?.priority ?? usePreferences.getState().defaultPriority,
             status: task?.status ?? 'todo',
             due_date: task?.due_date ?? defaultDate,
@@ -202,6 +203,11 @@ export function TaskForm({
                         label="Description"
                         placeholder="Add a little context…"
                         {...register('description')}
+                    />
+                    <LabeledTextarea
+                        label="Result (optional)"
+                        placeholder="What did you accomplish?"
+                        {...register('completion_note')}
                     />
                 </div>
                 <div className="grid gap-5 rounded-[22px] border border-slate-200/70 bg-white p-5 shadow-[0_3px_16px_-12px_#02304725]">

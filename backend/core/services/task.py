@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from core.models import Project, SubTask, Task
+from core.services.xp import sync_task_xp
 
 
 class TaskService:
@@ -35,6 +36,7 @@ class TaskService:
         data["project"] = self._project_for_write(data["project"], owner)
         self._set_completion(data)
         instance = Task.objects.create(**data)
+        sync_task_xp(instance, owner)
         SubTask.objects.bulk_create(
             [
                 SubTask(task=instance, **{"position": index, **item})
@@ -64,6 +66,7 @@ class TaskService:
         for field, value in data.items():
             setattr(instance, field, value)
         instance.save()
+        sync_task_xp(instance, owner)
         return instance
 
 

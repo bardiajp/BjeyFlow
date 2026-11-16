@@ -39,3 +39,17 @@ class PushDelivery(models.Model):
                 name="push_delivery_unique",
             )
         ]
+
+
+class LeaguePushDelivery(models.Model):
+    subscription = models.ForeignKey(PushSubscription, on_delete=models.CASCADE)
+    entry = models.ForeignKey("core.LeagueEntry", on_delete=models.CASCADE)
+    kind = models.CharField(max_length=24)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["subscription", "entry", "kind"], name="league_push_delivery_unique"
+            )
+        ]

@@ -1,5 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router';
 import TasksPage from '@/app/tasks/page';
+import GoalsPage from '@/app/goals/page';
+import XPPage from '@/app/xp/page';
+import LeaguePage from '@/app/league/page';
 import TrashPage from '@/app/tasks/trash';
 import SettingsPage from '@/app/settings/page';
 import Login from '@/app/users/login';
@@ -28,6 +31,9 @@ export default function AppRoutes() {
                 <Route path="upcoming" element={<TasksPage key="upcoming" view="upcoming" />} />
                 <Route path="completed" element={<TasksPage key="completed" view="completed" />} />
                 <Route path="trash" element={<TrashPage />} />
+                <Route path="goals" element={<GoalsPage />} />
+                <Route path="xp" element={<XPPage />} />
+                <Route path="league" element={<LeaguePage />} />
                 <Route path="projects/:projectId" element={<TasksPage view="project" />} />
                 <Route
                     path="admin"

@@ -5,6 +5,7 @@ from rest_framework.exceptions import ValidationError
 
 from core.models import SubTask, Task
 from core.services.task import task_service
+from core.services.xp import sync_task_xp
 
 
 @transaction.atomic
@@ -59,3 +60,5 @@ def reorder_tasks(owner, items):
     Task.objects.bulk_update(
         tasks, ["status", "position", "completed_at", "updated_at"]
     )
+    for task in tasks:
+        sync_task_xp(task, owner)

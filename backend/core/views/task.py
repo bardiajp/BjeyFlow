@@ -14,6 +14,7 @@ from core.models import Task
 from core.permissions import IsProjectOwner
 from core.serializers.task import TaskCreateSerializer, TaskSerializer
 from core.services.task import task_service
+from core.services.xp import sync_task_xp
 from core.services.reorder import reorder_tasks
 from core.serializers.reorder import TaskReorderSerializer
 
@@ -68,6 +69,7 @@ class TaskViewSet(ModelViewSet):
             )
             task.deleted_at = timezone.now()
             task.save(update_fields=["deleted_at", "updated_at"])
+            sync_task_xp(task, self.request.user)
 
     @action(detail=False, methods=["get"], ordering=("-deleted_at", "id"))
     def trash(self, request):
@@ -90,6 +92,7 @@ class TaskViewSet(ModelViewSet):
             )
             task.deleted_at = None
             task.save(update_fields=["deleted_at", "updated_at"])
+            sync_task_xp(task, request.user)
         return Response(self.get_serializer(task).data)
 
     @action(detail=True, methods=["delete"])

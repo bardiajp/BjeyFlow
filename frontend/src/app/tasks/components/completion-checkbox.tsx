@@ -1,4 +1,4 @@
-import { Checkbox } from '@base-ui/react/checkbox';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Check } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 
@@ -19,13 +19,13 @@ export function CompletionCheckbox({
 }) {
     const reduceMotion = useReducedMotion();
     return (
-        <Checkbox.Root
+        <Checkbox
+            variant="task"
             checked={completed}
             disabled={disabled || filling}
             aria-label={`${completed ? 'Reopen' : 'Complete'} task: ${title}`}
             aria-busy={filling || undefined}
             onCheckedChange={onChange}
-            className="border-primary focus-visible:ring-primary/40 relative flex size-6 shrink-0 items-center justify-center rounded-full border outline-none after:absolute after:-inset-2 focus-visible:ring-4 disabled:cursor-not-allowed"
         >
             <span
                 aria-hidden="true"
@@ -79,6 +79,6 @@ export function CompletionCheckbox({
                     <Check className="size-3.5" strokeWidth={2.5} />
                 </motion.span>
             )}
-        </Checkbox.Root>
+        </Checkbox>
     );
 }

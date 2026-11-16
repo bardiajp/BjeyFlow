@@ -30,6 +30,7 @@ import { ProfileSettings } from './profile';
 import { SessionSettings } from './sessions';
 import { TaskPreferences, DatePreferences } from './task-preferences';
 import { NotificationSettings } from './notifications';
+import { DesktopSettings } from './desktop';
 
 export default function SettingsPage() {
     const user = useUserStore((state) => state.user);
@@ -152,6 +153,7 @@ export default function SettingsPage() {
                     </div>
                 </section>
                 <ProfileSettings />
+                <DesktopSettings />
                 <section
                     id="appearance"
                     className="border-input bg-card rounded-[22px] border p-5 sm:p-6"

@@ -16,7 +16,8 @@ Production Docker/Nginx/TLS/mail deployment is documented in
 
 The web application in `frontend/` is the shared UI starting point for web/PWA,
 desktop and Android. Platform-specific projects have separate homes under
-`apps/`; those directories are placeholders, not runnable apps yet. The web app
+`apps/`; the Electron desktop application is documented in `apps/desktop/README.md`.
+The React Native mobile app is documented in `apps/mobile/README.md`. The web app
 is installable as a PWA and provides an offline fallback. The current backend,
 frontend and production deployment paths remain unchanged.
 

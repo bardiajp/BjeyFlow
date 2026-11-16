@@ -1,0 +1,84 @@
+name: Desktop release
+
+on:
+  push:
+    tags: ['desktop-v*']
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - name: Check release version
+        working-directory: apps/desktop
+        run: node -e "if ('desktop-v' + require('./package.json').version !== process.env.GITHUB_REF_NAME) process.exit(1)"
+      - name: Install dependencies
+        working-directory: apps/desktop
+        run: npm ci
+      - name: Build Linux AppImage and DEB
+        working-directory: apps/desktop
+        run: npm run dist:linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-linux
+          path: |
+            apps/desktop/dist/BjeyFlow-linux-x64.AppImage
+            apps/desktop/dist/BjeyFlow-linux-x64.deb
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - name: Check release version
+        working-directory: apps/desktop
+        shell: bash
+        run: node -e "if ('desktop-v' + require('./package.json').version !== process.env.GITHUB_REF_NAME) process.exit(1)"
+      - name: Install dependencies
+        working-directory: apps/desktop
+        run: npm ci
+      - name: Build Windows installer and portable app
+        working-directory: apps/desktop
+        run: npm run dist:windows
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows
+          path: |
+            apps/desktop/dist/BjeyFlow-Windows-x64-Setup.exe
+            apps/desktop/dist/BjeyFlow-Windows-x64-Portable.exe
+          if-no-files-found: error
+
+  release:
+    needs: [linux, windows]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-*
+          path: release-assets
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp frontend/public/icons/icon-512.png release-assets/BjeyFlow-icon.png
+          cp apps/desktop/AppImage-README.txt release-assets/BjeyFlow-AppImage-README.txt
+          gh release create "$GITHUB_REF_NAME" release-assets/BjeyFlow-linux-x64.AppImage release-assets/BjeyFlow-linux-x64.deb release-assets/BjeyFlow-Windows-x64-Setup.exe release-assets/BjeyFlow-Windows-x64-Portable.exe release-assets/BjeyFlow-icon.png release-assets/BjeyFlow-AppImage-README.txt --title "BjeyFlow Desktop ${GITHUB_REF_NAME#desktop-v}" --notes "Linux and Windows x86-64 builds. Requires an internet connection. Builds are not code-signed."

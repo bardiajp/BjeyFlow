@@ -1,0 +1,42 @@
+{
+  "name": "bjeyflow-desktop",
+  "productName": "BjeyFlow",
+  "version": "1.0.0",
+  "description": "BjeyFlow desktop application",
+  "homepage": "https://bjeyflow.space/",
+  "author": "BjeyFlow",
+  "license": "UNLICENSED",
+  "private": true,
+  "desktopName": "com.bjeyflow.desktop.desktop",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dist:linux": "electron-builder --linux AppImage deb --x64 --publish never",
+    "dist:windows": "electron-builder --win nsis portable --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.3.3",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "com.bjeyflow.desktop",
+    "productName": "BjeyFlow",
+    "directories": { "output": "dist" },
+    "files": ["main.cjs", "offline.html", "package.json"],
+    "extraResources": [{ "from": "../../frontend/public/icons/icon-512.png", "to": "icon.png" }],
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Office",
+      "maintainer": "BjeyFlow <noreply@bjeyflow.space>",
+      "syncDesktopName": true,
+      "icon": "../../frontend/public/icons/icon-512.png",
+      "artifactName": "BjeyFlow-linux-x64.${ext}"
+    },
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "../../frontend/public/icons/icon-512.png"
+    },
+    "nsis": { "artifactName": "BjeyFlow-Windows-x64-Setup.${ext}" },
+    "portable": { "artifactName": "BjeyFlow-Windows-x64-Portable.${ext}" }
+  }
+}

@@ -10,13 +10,13 @@ export default function UsersPage() {
         <div className="flex min-h-0 w-full flex-1 flex-col">
             <AsyncState
                 isLoading={query.isPending}
-                error={query.error}
+                error={query.data ? null : query.error}
                 loadingComponent={<Skeleton className="min-h-96 w-full flex-1 rounded-3xl" />}
                 component={
                     <UsersList
                         users={query.data ?? []}
                         isRefetching={query.isRefetching}
-                        onRefetch={() => void query.refetch()}
+                        onRefetch={async () => { await query.refetch({ throwOnError: true }); }}
                     />
                 }
             />

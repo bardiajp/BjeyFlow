@@ -9,7 +9,7 @@ const buttonVariants = cva(
     {
         variants: {
             variant: {
-                default: 'bg-primary text-[#023047]',
+                default: 'bg-brand text-white',
                 outline: 'border border-input bg-background',
                 ghost: '',
                 cancel: 'border border-input bg-background',

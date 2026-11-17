@@ -14,14 +14,23 @@ import {
 import { usePreferences } from '@/store/use-preferences';
 import { cn } from '@/lib/utils';
 
+const priorityColors: Record<Task['priority'], string> = {
+    low: '#059669',
+    normal: '#548aa3',
+    high: '#ea8613',
+    urgent: '#e15465',
+};
+
 export function TaskCalendar({
     tasks,
     today,
     onOpen,
+    colorBy,
 }: {
     tasks: Task[];
     today: string;
     onOpen: (id: string) => void;
+    colorBy: 'project' | 'priority';
 }) {
     const [selected, setSelected] = useState(today);
     const { weekStart, calendar } = usePreferences();
@@ -33,6 +42,8 @@ export function TaskCalendar({
         .sort((a, b) => (a.due_time ?? '').localeCompare(b.due_time ?? ''));
     const unscheduled = tasks.filter((task) => !task.due_date);
     const shiftMonth = (offset: number) => setMonth(shiftCalendarMonth(month, offset));
+    const taskColor = (task: Task) =>
+        colorBy === 'project' ? task.project_color || '#8ECAE6' : priorityColors[task.priority];
 
     return (
         <div className="grid min-w-0 gap-5 pt-2">
@@ -147,14 +158,8 @@ export function TaskCalendar({
                                     {dayTasks.slice(0, 3).map((task) => (
                                         <span
                                             key={task.id}
-                                            className={cn(
-                                                'bg-brand size-1 rounded-full',
-                                                task.status === 'completed' && 'bg-emerald-400',
-                                                (task.priority === 'urgent' ||
-                                                    task.priority === 'high') &&
-                                                    task.status !== 'completed' &&
-                                                    'bg-orange-400'
-                                            )}
+                                            className="size-1 rounded-full"
+                                            style={{ backgroundColor: taskColor(task) }}
                                         />
                                     ))}
                                     {dayTasks.length > 3 && (
@@ -170,15 +175,12 @@ export function TaskCalendar({
                                             type="button"
                                             title={`${task.identifier} · ${task.title}`}
                                             onClick={() => onOpen(task.id)}
-                                            className={cn(
-                                                'flow-control border-primary/15 bg-primary/10 text-primary-foreground block w-full min-w-0 truncate rounded-md border px-1.5 py-1 text-left text-[9px]',
-                                                task.status === 'completed' &&
-                                                    'border-emerald-100 bg-emerald-50 text-emerald-700',
-                                                (task.priority === 'urgent' ||
-                                                    task.priority === 'high') &&
-                                                    task.status !== 'completed' &&
-                                                    'border-orange-100 bg-orange-50 text-orange-600'
-                                            )}
+                                            className="flow-control block w-full min-w-0 truncate rounded-md border px-1.5 py-1 text-left text-[9px]"
+                                            style={{
+                                                color: '#0f172a',
+                                                backgroundColor: `color-mix(in srgb, ${taskColor(task)} 18%, white)`,
+                                                borderColor: `color-mix(in srgb, ${taskColor(task)} 45%, white)`,
+                                            }}
                                         >
                                             {task.identifier} · {task.title}
                                         </button>
@@ -225,10 +227,8 @@ export function TaskCalendar({
                                 className="flow-control flex min-w-0 items-center gap-3 rounded-xl border border-slate-200/70 bg-white p-3 text-left"
                             >
                                 <span
-                                    className={cn(
-                                        'bg-primary size-1.5 shrink-0 rounded-full',
-                                        task.status === 'completed' && 'bg-emerald-400'
-                                    )}
+                                    className="size-1.5 shrink-0 rounded-full"
+                                    style={{ backgroundColor: taskColor(task) }}
                                 />
                                 <span className="min-w-0 flex-1">
                                     <span className="text-primary-foreground block truncate text-xs font-medium">
@@ -269,6 +269,7 @@ export function TaskCalendar({
                                 type="button"
                                 onClick={() => onOpen(task.id)}
                                 className="flow-control max-w-full truncate rounded-xl border border-dashed border-slate-200 bg-white px-3 py-2 text-[10px] text-slate-500"
+                                style={{ borderColor: taskColor(task) }}
                             >
                                 {task.identifier} · {task.title}
                             </button>

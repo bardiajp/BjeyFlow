@@ -9,10 +9,44 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from administration.audit import record_event
 from users.models import User
-from core.models import Project
+from core.models import Project, Task
 
 
 class UserManagementService:
+    @staticmethod
+    @transaction.atomic
+    def transfer_superuser(actor, instance):
+        list(User.objects.filter(is_superuser=True).order_by("pk").select_for_update())
+        actor = User.objects.select_for_update().get(pk=actor.pk)
+        instance = User.objects.select_for_update().get(pk=instance.pk)
+        if not actor.is_active or not actor.is_superuser:
+            raise PermissionDenied("Only a system administrator can transfer this role.")
+        if actor.pk == instance.pk or not instance.is_active:
+            raise ValidationError({"detail": "Choose another active account."})
+        instance.set_role("superuser")
+        instance.save(update_fields=["is_staff", "is_superuser"])
+        actor.set_role("staff")
+        actor.save(update_fields=["is_staff", "is_superuser"])
+        record_event("user.superuser_transferred", actor=actor, target=instance.username)
+        return instance
+
+    @staticmethod
+    @transaction.atomic
+    def delete_own_account(actor, password):
+        list(User.objects.filter(is_superuser=True).order_by("pk").select_for_update())
+        actor = User.objects.select_for_update().get(pk=actor.pk)
+        if not actor.check_password(password):
+            raise ValidationError({"password": "Incorrect password."})
+        if actor.is_superuser and not User.objects.filter(
+            is_superuser=True, is_active=True
+        ).exclude(pk=actor.pk).exists():
+            raise ValidationError(
+                {"detail": "Transfer the system administrator role before deleting your account."}
+            )
+        record_event("user.self_deleted", actor=actor, target=actor.username)
+        Task.objects.filter(project__owner=actor).delete()
+        actor.delete()
+
     @staticmethod
     @transaction.atomic
     def create_user(actor, validated_data):

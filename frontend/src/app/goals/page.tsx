@@ -11,6 +11,9 @@ import { LabeledTextarea } from '@/components/form/labeled-textarea';
 import { LabeledSelect } from '@/components/form/labeled-select';
 import { DatePicker } from '@/components/form/date-picker';
 import { InlineConfirm } from '@/components/inline-confirm';
+import { ActionMenu } from '@/components/action-menu';
+import { FormActions } from '@/components/form-actions';
+import { AttachTaskSection } from '@/components/attach-task-section';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
     Archive,
@@ -185,17 +188,10 @@ export default function GoalsPage() {
                                 value={date}
                                 onChange={setDate}
                             />
-                            <div className="flex flex-wrap justify-end gap-2">
-                                <Button
-                                    type="submit"
-                                    className="rounded-xl"
-                                    isPending={mutation.isPending}
-                                >
-                                    {editing ? 'Save changes' : 'Create goal'}
-                                </Button>
+                            <FormActions>
                                 <Button
                                     type="button"
-                                    variant="ghost"
+                                    variant="cancel"
                                     onClick={() => {
                                         setEditing(false);
                                         setTitle('');
@@ -203,11 +199,17 @@ export default function GoalsPage() {
                                         setDate('');
                                         setShowForm(false);
                                     }}
-                                    className="text-sm text-slate-500"
+                                    disabled={mutation.isPending}
                                 >
                                     Cancel
                                 </Button>
-                            </div>
+                                <Button
+                                    type="submit"
+                                    isPending={mutation.isPending}
+                                >
+                                    {editing ? 'Save changes' : 'Create goal'}
+                                </Button>
+                            </FormActions>
                         </form>
                     </motion.div>
                 )}
@@ -332,7 +334,7 @@ export default function GoalsPage() {
                                                     </p>
                                                 )}
                                             </div>
-                                            <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:ml-auto sm:w-auto">
+                                            <ActionMenu label={`Manage goal: ${goal.title}`}>
                                                 <Button
                                                     variant="outline"
                                                     className="rounded-xl"
@@ -364,6 +366,7 @@ export default function GoalsPage() {
                                                     {goal.is_archived ? 'Restore' : 'Archive'}
                                                 </Button>
                                                 <InlineConfirm
+                                                    className="col-span-2"
                                                     label={`Delete goal: ${goal.title}`}
                                                     title="Tasks stay. Delete?"
                                                     description="The goal and its milestones will be deleted. Their tasks will remain in their projects."
@@ -386,9 +389,9 @@ export default function GoalsPage() {
                                                         ]);
                                                     }}
                                                 >
-                                                    <Trash2 size={14} /> Delete goal
+                                                    <Trash2 size={14} /> Delete
                                                 </InlineConfirm>
-                                            </div>
+                                            </ActionMenu>
                                         </div>
                                         {!goal.is_archived && (
                                             <form
@@ -455,7 +458,7 @@ export default function GoalsPage() {
                                                             {milestone.progress}%
                                                         </p>
                                                     </div>
-                                                    <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:ml-auto sm:w-auto">
+                                                    {!goal.is_archived && <ActionMenu label={`Manage milestone: ${milestone.title}`}>
                                                         {!goal.is_archived &&
                                                             editingMilestone !== milestone.id && (
                                                                 <Button
@@ -496,10 +499,9 @@ export default function GoalsPage() {
                                                                 }}
                                                             >
                                                                 <Trash2 size={14} /> Delete
-                                                                milestone
                                                             </InlineConfirm>
                                                         )}
-                                                    </div>
+                                                    </ActionMenu>}
                                                 </div>
                                                 <div className="h-1.5 overflow-hidden rounded-full bg-slate-200/70">
                                                     <div
@@ -543,20 +545,20 @@ export default function GoalsPage() {
                                                                 required
                                                             />
                                                             <Button
-                                                                type="submit"
-                                                                className="rounded-xl"
-                                                                isPending={mutation.isPending}
-                                                            >
-                                                                Save
-                                                            </Button>
-                                                            <Button
                                                                 type="button"
-                                                                variant="ghost"
+                                                                variant="cancel"
+                                                                disabled={mutation.isPending}
                                                                 onClick={() =>
                                                                     setEditingMilestone(null)
                                                                 }
                                                             >
                                                                 Cancel
+                                                            </Button>
+                                                            <Button
+                                                                type="submit"
+                                                                isPending={mutation.isPending}
+                                                            >
+                                                                Save
                                                             </Button>
                                                         </form>
                                                     )}
@@ -597,6 +599,7 @@ export default function GoalsPage() {
                                                         </div>
                                                     ))}
                                                 {!goal.is_archived && (
+                                                    <AttachTaskSection label="Attach a task">
                                                     <div className="flex flex-wrap items-end justify-end gap-2">
                                                         <LabeledSelect
                                                             containerClassName="min-w-0 flex-1 basis-40"
@@ -654,6 +657,7 @@ export default function GoalsPage() {
                                                             Attach
                                                         </Button>
                                                     </div>
+                                                    </AttachTaskSection>
                                                 )}
                                             </div>
                                         ))}

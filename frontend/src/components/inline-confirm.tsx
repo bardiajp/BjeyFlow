@@ -15,6 +15,7 @@ export function InlineConfirm({
     onConfirm,
     disabled = false,
     tone = 'danger',
+    className,
 }: {
     children: ReactNode;
     label: string;
@@ -24,6 +25,7 @@ export function InlineConfirm({
     onConfirm: () => Promise<unknown>;
     disabled?: boolean;
     tone?: 'danger' | 'normal';
+    className?: string;
 }) {
     const [open, setOpen] = useState(false);
     const [pending, setPending] = useState(false);
@@ -73,7 +75,7 @@ export function InlineConfirm({
     return (
         <div
             ref={container}
-            className="relative h-9 w-40 max-w-full shrink-0 overflow-hidden rounded-xl whitespace-normal"
+            className={cn('relative h-9 w-40 max-w-full shrink-0 overflow-hidden rounded-xl whitespace-normal', className)}
             data-confirming={open}
             onKeyDown={(event) => {
                 if (open && !pending && event.key === 'Escape') {

@@ -36,13 +36,13 @@ export function UsernameSettings() {
                     </p>
                 )}
             <form
-                className="mt-3 flex flex-wrap items-end gap-2"
+                className="mt-3 flex min-w-0 flex-col items-stretch gap-2 sm:flex-row sm:items-end"
                 onSubmit={(event) => {
                     event.preventDefault();
                     mutation.mutate(username);
                 }}
             >
-                <label className="min-w-0 flex-1 text-xs">
+                <label className="min-w-0 w-full flex-1 text-xs">
                     <span className="sr-only">Username</span>
                     <Input
                         value={username}
@@ -57,7 +57,7 @@ export function UsernameSettings() {
                     type="submit"
                     disabled={username === user.username || mutation.isPending}
                     isPending={mutation.isPending}
-                    className="rounded-xl text-xs"
+                    className="w-full rounded-xl text-xs sm:w-auto"
                 >
                     Save username
                 </Button>

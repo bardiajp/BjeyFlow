@@ -55,7 +55,7 @@ export function SessionSettings() {
                 {query.data?.map((session) => (
                     <div key={session.id} className="flex flex-wrap items-center gap-3 py-4">
                         <Monitor size={18} className="text-muted-foreground shrink-0" />
-                        <div className="min-w-0 flex-1 basis-48">
+                        <div className="min-w-0 flex-1 basis-32 sm:basis-48">
                             <p className="text-foreground text-xs font-medium">
                                 {session.current ? 'This device' : 'Other device'}
                             </p>

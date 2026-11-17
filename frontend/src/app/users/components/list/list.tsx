@@ -32,6 +32,8 @@ import { InlineConfirm } from '@/components/inline-confirm';
 import { sendResetLink } from '@/app/admin/api';
 import { cn } from '@/lib/utils';
 import { formatTimestamp } from '@/lib/date';
+import { axiosInstance } from '@/lib/api';
+import { useRefresh } from '@/hooks/use-refresh';
 
 type Action = 'edit' | 'reset';
 const pageSize = 10;
@@ -42,10 +44,12 @@ export default function UsersList({
     isRefetching,
 }: {
     users: PanelUser[];
-    onRefetch: () => void;
+    onRefetch: () => Promise<void>;
     isRefetching: boolean;
 }) {
     const currentUser = useUserStore((state) => state.user);
+    const refresh = useRefresh(onRefetch, 'People refreshed');
+    const setUser = useUserStore((state) => state.setUser);
     const invalidate = useInvalidateUsers();
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -82,7 +86,17 @@ export default function UsersList({
         onSuccess: (data) =>
             toast.add({ type: 'info', title: 'Reset link accepted', description: data.detail }),
     });
-    const busy = action.isPending || email.isPending;
+    const transfer = useMutation({
+        mutationFn: async (id: string) => {
+            await axiosInstance.post(`users/${id}/transfer-superuser/`);
+        },
+        onSuccess: async () => {
+            if (currentUser) setUser({ ...currentUser, role: 'staff' });
+            await invalidate();
+            toast.add({ type: 'info', title: 'System administrator role transferred' });
+        },
+    });
+    const busy = action.isPending || email.isPending || transfer.isPending;
     const filtered = users.filter(
         (user) =>
             (statusFilter === 'all' || user.is_active === (statusFilter === 'active')) &&
@@ -184,16 +198,16 @@ export default function UsersList({
                     </select>
                     <Button
                         variant="outline"
-                        disabled={isRefetching}
-                        aria-busy={isRefetching}
+                        disabled={isRefetching || refresh.refreshing}
+                        aria-busy={refresh.refreshing}
                         className="h-10 w-28 shrink-0 gap-2 rounded-xl text-xs"
-                        onClick={onRefetch}
+                        onClick={() => void refresh.refresh()}
                     >
                         <RefreshCw
                             size={14}
                             className={cn(
                                 'shrink-0',
-                                isRefetching && 'animate-spin motion-reduce:animate-none'
+                                refresh.refreshing && 'animate-spin motion-reduce:animate-none'
                             )}
                         />
                         Refresh
@@ -340,6 +354,19 @@ export default function UsersList({
                                         </td>
                                         <td className="px-6 py-4 align-middle">
                                             <div className="flex items-center justify-end gap-1">
+                                                {currentUser?.role === 'superuser' && !self && user.is_active && (
+                                                    <InlineConfirm
+                                                        label={`Transfer system administrator to ${user.username}`}
+                                                        title="You will lose superuser access"
+                                                        description={`${user.username} will become a system administrator and you will become an administrator.`}
+                                                        confirmLabel="Transfer system administrator role"
+                                                        disabled={busy}
+                                                        onConfirm={() => transfer.mutateAsync(user.id)}
+                                                    >
+                                                        <ShieldCheck size={13} />
+                                                        Transfer role
+                                                    </InlineConfirm>
+                                                )}
                                                 <Button
                                                     variant="ghost"
                                                     className="text-muted-foreground size-8 shrink-0 rounded-lg p-0"

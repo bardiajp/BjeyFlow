@@ -92,12 +92,12 @@ export function ProfileSettings() {
                 Your profile
             </h2>
             <form
-                className="grid gap-5"
+                className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5"
                 onSubmit={handleSubmit((values) => mutation.mutate(values))}
             >
                 <fieldset
                     disabled={mutation.isPending || processing}
-                    className="grid min-w-0 gap-5"
+                    className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5"
                 >
                     <div className="flex flex-wrap items-center gap-4">
                         <span className="bg-brand text-primary flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-xl">

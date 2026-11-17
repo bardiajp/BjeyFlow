@@ -55,7 +55,7 @@ function SettingsGroup({
                 <h2 className="text-foreground text-base font-semibold tracking-tight">{title}</h2>
                 <p className="text-muted-foreground mt-1 text-xs leading-relaxed">{description}</p>
             </div>
-            <div className="[&>section+section]:border-input grid min-w-0 gap-5 [&>section]:rounded-none [&>section]:border-0 [&>section]:bg-transparent [&>section]:p-0 [&>section+section]:border-t [&>section+section]:pt-5">
+            <div className="[&>section+section]:border-input grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 [&>section]:min-w-0 [&>section]:max-w-full [&>section]:rounded-none [&>section]:border-0 [&>section]:bg-transparent [&>section]:p-0 [&>section+section]:border-t [&>section+section]:pt-5">
                 {children}
             </div>
         </section>
@@ -110,15 +110,15 @@ export default function SettingsPage() {
                 </div>
             )}
             <div className="grid min-w-0 grid-cols-1 items-start gap-4 sm:gap-5 lg:grid-cols-2">
-                <div className="grid min-w-0 gap-4 sm:gap-5">
+                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 sm:gap-5">
                     <SettingsGroup
                         id="settings-account"
                         title="Account & security"
                         description="Your profile, password and signed-in devices."
                     >
                         <section className="border-input bg-card rounded-[22px] border p-5">
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div className="flex min-w-0 items-start gap-3">
+                            <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+                                <div className="flex min-w-0 flex-1 items-start gap-3">
                                     <span className="bg-accent text-primary-foreground flex size-10 shrink-0 items-center justify-center rounded-xl">
                                         <UserRound size={18} />
                                     </span>
@@ -136,7 +136,7 @@ export default function SettingsPage() {
                                         )}
                                     </div>
                                 </div>
-                                <span className="bg-accent text-muted-foreground inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px]">
+                                <span className="bg-accent text-muted-foreground inline-flex max-w-full shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 text-[10px]">
                                     <Shield size={12} />
                                     {user?.role === 'superuser'
                                         ? 'System administrator'
@@ -180,7 +180,7 @@ export default function SettingsPage() {
                         <NotificationSettings />
                     </SettingsGroup>
                 </div>
-                <div className="grid min-w-0 gap-4 sm:gap-5">
+                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 sm:gap-5">
                     <SettingsGroup
                         id="settings-appearance"
                         title="Preferences"

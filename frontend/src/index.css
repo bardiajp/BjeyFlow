@@ -211,6 +211,14 @@
     color: var(--foreground);
 }
 
+#settings-account input:-webkit-autofill,
+#settings-account input:-webkit-autofill:hover,
+#settings-account input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--foreground);
+    box-shadow: 0 0 0 1000px var(--card) inset;
+    caret-color: var(--foreground);
+}
+
 @keyframes board-water-ripple {
     0% {
         opacity: 0;

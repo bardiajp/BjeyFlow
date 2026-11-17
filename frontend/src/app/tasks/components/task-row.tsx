@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { CalendarDays, Flag, GripVertical, ListChecks, MoreHorizontal } from 'lucide-react';
+import { CalendarDays, Flag, GripVertical, MoreHorizontal } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { ProjectIcon } from '@/app/projects/components/project-icon';
 import { setTaskCompleted } from '../api/complete';
@@ -12,6 +12,7 @@ import { toast } from '@/components/ui/toast';
 import { CompletionCheckbox } from './completion-checkbox';
 import { formatDay, formatTime } from '@/lib/date';
 import { cn } from '@/lib/utils';
+import { QuickSubtasks } from './quick-subtasks';
 
 export function TaskRow({
     task,
@@ -30,6 +31,7 @@ export function TaskRow({
 }) {
     const invalidate = useInvalidateTasks();
     const [filling, setFilling] = useState(false);
+    const [draining, setDraining] = useState(false);
     const completed = task.status === 'completed';
     const high = task.priority === 'high' || task.priority === 'urgent';
     const toggle = useMutation({
@@ -42,8 +44,12 @@ export function TaskRow({
             });
             await invalidate();
             setFilling(false);
+            setDraining(false);
         },
-        onError: () => setFilling(false),
+        onError: () => {
+            setFilling(false);
+            setDraining(false);
+        },
     });
     const priority = useMutation({
         mutationFn: () => updateTask(task.id, { priority: high ? 'normal' : 'high' }),
@@ -99,13 +105,15 @@ export function TaskRow({
                     <CompletionCheckbox
                         completed={completed}
                         filling={filling}
+                        draining={draining}
                         disabled={disabled || toggle.isPending}
                         title={task.title}
                         onChange={(value) => {
                             if (value) setFilling(true);
-                            else toggle.mutate(false);
+                            else setDraining(true);
                         }}
                         onFilled={() => toggle.mutate(true)}
+                        onDrained={() => toggle.mutate(false)}
                     />
                 )}
                 <div className="min-w-0 flex-1">
@@ -138,47 +146,13 @@ export function TaskRow({
                             <ProjectIcon name={task.project_icon} size={13} color={task.project_color || '#8ECAE6'} />
                             <span>{task.project_name}</span>
                         </span>
-                        {!board && task.subtasks_count > 0 && (
-                            <span className="inline-flex items-center gap-1.5">
-                                <ListChecks size={13} />
-                                {task.completed_subtasks_count} / {task.subtasks_count}
-                            </span>
-                        )}
                         {!board && task.status === 'in_progress' && (
                             <span className="text-secondary text-[11px]">In progress</span>
                         )}
                     </div>
                 </div>
                 {board && task.subtasks_count > 0 && (
-                    <div className="rounded-xl bg-slate-50/80 px-2.5 py-2">
-                        <div className="mb-2 flex items-center justify-between gap-2 text-[9px] text-slate-400">
-                            <span className="flex items-center gap-1.5">
-                                <ListChecks size={12} />
-                                Checklist
-                            </span>
-                            <span className="text-primary-foreground font-medium tabular-nums">
-                                {task.completed_subtasks_count} / {task.subtasks_count}
-                            </span>
-                        </div>
-                        <div
-                            role="progressbar"
-                            aria-label="Checklist progress"
-                            aria-valuemin={0}
-                            aria-valuemax={task.subtasks_count}
-                            aria-valuenow={task.completed_subtasks_count}
-                            className="h-1 overflow-hidden rounded-full bg-slate-200/60"
-                        >
-                            <div
-                                className={cn(
-                                    'bg-primary h-full rounded-full transition-[width] duration-700 ease-in-out motion-reduce:transition-none',
-                                    completed && 'bg-emerald-400'
-                                )}
-                                style={{
-                                    width: `${(task.completed_subtasks_count / task.subtasks_count) * 100}%`,
-                                }}
-                            />
-                        </div>
-                    </div>
+                    <QuickSubtasks task={task} board disabled={disabled} />
                 )}
                 <div
                     className={cn(
@@ -233,6 +207,9 @@ export function TaskRow({
                     </Button>
                 </div>
             </div>
+            {!board && task.subtasks_count > 0 && (
+                <QuickSubtasks task={task} board={false} disabled={disabled} />
+            )}
             <DisplayError error={toggle.error || priority.error} />
         </div>
     );

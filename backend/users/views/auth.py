@@ -18,9 +18,10 @@ from users.serializers.auth import (
     LoginSerializer,
     UserProfileSerializer,
 )
-from rest_framework.throttling import AnonRateThrottle
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from core.utils.ip import get_ip
 from users.models import AccountSession
+from users.services.management import user_management_service
 
 
 class LoginBurstThrottle(AnonRateThrottle):
@@ -32,6 +33,10 @@ class LoginBurstThrottle(AnonRateThrottle):
 
 class LoginHourlyThrottle(LoginBurstThrottle):
     scope = "login_hourly"
+
+
+class DeleteAccountThrottle(UserRateThrottle):
+    rate = "5/min"
 
 
 def authenticated_response(user, request, remember_me=True):
@@ -115,5 +120,19 @@ class ChangePasswordView(APIView):
 class MeView(APIView):
     permission_classes = (IsAuthenticated,)
 
+    def get_throttles(self):
+        if self.request.method == "DELETE":
+            return [DeleteAccountThrottle()]
+        return super().get_throttles()
+
     def get(self, request):
         return Response({"user": UserProfileSerializer(request.user).data})
+
+    def delete(self, request):
+        password = request.data.get("password")
+        if not isinstance(password, str) or not password:
+            raise ValidationError({"password": "This field is required."})
+        user_management_service.delete_own_account(request.user, password)
+        response = Response(status=status.HTTP_204_NO_CONTENT)
+        response.delete_cookie(settings.JWT_COOKIE_NAME, path="/")
+        return response

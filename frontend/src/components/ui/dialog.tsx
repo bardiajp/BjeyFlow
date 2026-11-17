@@ -3,6 +3,7 @@ import { XIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { Button } from './button';
 import { cn } from '@/lib/utils';
+import { FormActions } from '@/components/form-actions';
 
 export function Dialog(props: DialogPrimitive.Root.Props) {
     return <DialogPrimitive.Root {...props} />;
@@ -62,5 +63,5 @@ export function DialogDescription({ className, ...props }: DialogPrimitive.Descr
     );
 }
 export function DialogFooter({ className, ...props }: ComponentProps<'div'>) {
-    return <div className={cn('flex justify-end gap-2 border-t pt-4', className)} {...props} />;
+    return <FormActions className={cn('border-t pt-4', className)} {...props} />;
 }

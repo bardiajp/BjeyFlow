@@ -11,6 +11,7 @@ class TaskSerializer(serializers.ModelSerializer):
         queryset=Project.objects.none(), pk_field=serializers.UUIDField()
     )
     project_name = serializers.CharField(source="project.name", read_only=True)
+    project_color = serializers.CharField(source="project.color", read_only=True)
     milestone = serializers.PrimaryKeyRelatedField(
         queryset=Milestone.objects.none(), pk_field=serializers.UUIDField(), allow_null=True, required=False
     )
@@ -26,6 +27,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "project",
             "milestone",
             "project_name",
+            "project_color",
             "project_icon",
             "title",
             "number",

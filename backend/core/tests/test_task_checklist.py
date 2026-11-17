@@ -61,6 +61,18 @@ class CreateTaskChecklistTests(APITestCase):
         self.assertEqual(response.status_code, 201, response.data)
         self.assertEqual(response.data["subtasks_count"], 0)
 
+    def test_task_response_includes_current_project_color(self):
+        self.project.color = "#123456"
+        self.project.save(update_fields=["color"])
+        response = self.create_task([])
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data["project_color"], "#123456")
+        self.project.color = "#abcdef"
+        self.project.save(update_fields=["color"])
+        response = self.client.get(f"/api/tasks/{response.data['id']}/")
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["project_color"], "#abcdef")
+
     def test_invalid_checklist_does_not_create_partial_task(self):
         response = self.create_task([{"title": "   ", "is_completed": False}])
         self.assertEqual(response.status_code, 400)

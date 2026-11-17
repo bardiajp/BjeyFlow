@@ -298,6 +298,7 @@ export default function TasksPage({ view }: { view: TaskView }) {
                                 tasks={query.data ?? []}
                                 today={today}
                                 onOpen={openTask}
+                                colorBy={view === 'project' ? 'priority' : 'project'}
                             />
                         ) : query.data?.length ? (
                             mode === 'list' ? (

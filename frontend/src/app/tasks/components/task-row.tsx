@@ -131,8 +131,11 @@ export function TaskRow({
                         <span className="text-muted-foreground font-mono text-[10px]">
                             {task.identifier}
                         </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100/70 px-1.5 py-0.5">
-                            <ProjectIcon name={task.project_icon} size={13} />
+                        <span
+                            className="text-foreground inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5"
+                            style={{ backgroundColor: `color-mix(in srgb, ${task.project_color || '#8ECAE6'} 22%, transparent)` }}
+                        >
+                            <ProjectIcon name={task.project_icon} size={13} color={task.project_color || '#8ECAE6'} />
                             <span>{task.project_name}</span>
                         </span>
                         {!board && task.subtasks_count > 0 && (

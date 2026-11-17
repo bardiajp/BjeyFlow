@@ -1,6 +1,6 @@
 import { Menu } from '@base-ui/react/menu';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight, ChevronDown, LogOut, SlidersHorizontal, Waves } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, LogOut, SlidersHorizontal } from 'lucide-react';
 import { Link } from 'react-router';
 import { logout } from '@/app/users/api/logout';
 import DisplayError from '@/components/display-error';
@@ -67,48 +67,47 @@ export function AccountMenu({
                     <ChevronDown
                         size={15}
                         className={cn(
-                            'sidebar-copy absolute right-2.5 text-slate-400 transition-[rotate,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-data-popup-open:rotate-180 motion-reduce:transition-none'
+                            'sidebar-copy absolute right-2.5 text-slate-400 transition-[rotate,opacity] duration-200 ease-out group-data-popup-open:rotate-180 motion-reduce:transition-none'
                         )}
                     />
                 </Menu.Trigger>
                 <Menu.Portal>
-                    <Menu.Positioner side="top" align="start" sideOffset={8} className="z-50">
-                        <Menu.Popup className="bg-popover text-popover-foreground border-input w-(--anchor-width) max-w-[calc(100vw-2rem)] min-w-64 overflow-hidden rounded-[22px] border shadow-xl transition-[clip-path,translate] duration-500 ease-in-out outline-none [clip-path:inset(0_0_0_0_round_22px)] data-ending-style:translate-y-4 data-ending-style:[clip-path:inset(100%_0_0_0_round_22px)] data-starting-style:translate-y-4 data-starting-style:[clip-path:inset(100%_0_0_0_round_22px)] motion-reduce:transition-none">
-                            <div className="surface-wash border-input border-b p-4">
-                                <span className="text-muted-foreground mb-3 flex items-center gap-1.5 text-[8px] font-semibold tracking-[0.14em]">
-                                    <Waves size={12} />
-                                    YOUR PERSONAL SPACE
+                    <Menu.Positioner side="top" align="start" sideOffset={21} className="z-50">
+                        <Menu.Popup className={cn(
+                            'bg-popover text-popover-foreground border-input w-(--anchor-width) max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border p-2 shadow-xl transition-[opacity,translate] duration-200 ease-out outline-none data-ending-style:translate-y-2 data-ending-style:opacity-0 data-ending-style:duration-150 data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none',
+                            collapsed && 'min-w-56'
+                        )}>
+                            <div className="border-input flex min-w-0 items-center gap-3 border-b px-2 pt-1 pb-3">
+                                <span className="bg-brand text-primary flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-xl text-xs font-semibold">
+                                    {user?.avatar ? (
+                                        <img src={user.avatar} alt="" className="size-full object-cover" />
+                                    ) : initials}
                                 </span>
-                                <p className="text-foreground truncate text-[13px] font-semibold">
-                                    {name}
-                                </p>
-                                <p className="text-muted-foreground mt-1 text-[10px]">
-                                    A little more flow, your way.
-                                </p>
+                                <div className="min-w-0">
+                                    <p className="text-foreground truncate text-xs font-semibold">{name}</p>
+                                    <p className="text-muted-foreground mt-1 text-[10px]">
+                                        {user?.role === 'superuser'
+                                            ? 'System administrator'
+                                            : user?.role === 'staff'
+                                              ? 'Administrator'
+                                              : 'Personal account'}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="grid gap-1 p-2">
+                            <div className="grid gap-1 pt-2">
                                 <Menu.Item
                                     render={<Link to="/settings" />}
                                     onClick={onNavigate}
-                                    className="data-highlighted:bg-accent data-highlighted:border-input flex cursor-pointer items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-xs outline-none"
+                                    className="data-highlighted:bg-accent flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-xs outline-none"
                                 >
-                                    <span className="border-input bg-background flex size-8 shrink-0 items-center justify-center rounded-lg border">
-                                        <SlidersHorizontal size={15} />
-                                    </span>
-                                    <span className="min-w-0 flex-1">
-                                        <span className="block font-medium">
-                                            Account & settings
-                                        </span>
-                                        <span className="text-muted-foreground mt-1 block text-[9px]">
-                                            Profile, appearance & your rhythm
-                                        </span>
-                                    </span>
+                                    <SlidersHorizontal size={16} aria-hidden="true" />
+                                    <span className="min-w-0 flex-1 font-medium">Account & settings</span>
                                     <ArrowUpRight size={13} className="text-muted-foreground" />
                                 </Menu.Item>
                                 <Menu.Item
                                     disabled={mutation.isPending}
                                     onClick={() => mutation.mutate()}
-                                    className="text-secondary data-highlighted:bg-secondary/10 border-input mt-1 flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-xs outline-none data-disabled:opacity-50"
+                                    className="text-secondary data-highlighted:bg-secondary/10 border-input mt-1 flex cursor-pointer items-center gap-3 rounded-b-xl border-t px-3 py-2.5 text-xs outline-none data-disabled:opacity-50"
                                 >
                                     <LogOut size={16} />
                                     {mutation.isPending ? 'Signing out…' : 'Sign out'}

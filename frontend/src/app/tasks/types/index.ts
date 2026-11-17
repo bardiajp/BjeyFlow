@@ -19,6 +19,7 @@ export interface Task {
     project: string;
     milestone: string | null;
     project_name: string;
+    project_color: string;
     project_icon: ProjectIconName;
     title: string;
     description: string;

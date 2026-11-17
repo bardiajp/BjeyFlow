@@ -1,12 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
 import { Database, HardDrive, Mail, RefreshCw, Server, ShieldCheck } from 'lucide-react';
 import { getServiceStatus } from './api';
 import DisplayError from '@/components/display-error';
 import Loading from '@/components/loading';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { toast } from '@/components/ui/toast';
+import { useRefresh } from '@/hooks/use-refresh';
 import { formatTimestamp } from '@/lib/date';
 
 const statusLabel: Record<string, string> = {
@@ -19,42 +18,28 @@ const statusLabel: Record<string, string> = {
 const bytes = (value: number) => `${(value / 1024 ** 3).toFixed(1)} GB`;
 
 export default function AdminServices() {
-    const [checking, setChecking] = useState(false);
     const query = useQuery({
         queryKey: ['admin', 'health'],
         queryFn: getServiceStatus,
         staleTime: 60_000,
     });
+    const check = useRefresh(async () => {
+        const result = await query.refetch({ throwOnError: true });
+        if (!result.data) throw new Error('No service status returned.');
+        const needsAttention = [
+            result.data.database,
+            result.data.cache,
+            result.data.email,
+        ].includes('unavailable');
+        return {
+            type: needsAttention ? 'warning' : 'success',
+            title: needsAttention ? 'Checks complete · attention needed' : 'Checks complete',
+            description: needsAttention
+                ? 'One or more services need attention. Review the status below.'
+                : 'The latest service status is ready.',
+        };
+    });
     if (query.isPending) return <Loading />;
-    const checkAgain = async () => {
-        if (checking) return;
-        setChecking(true);
-        const [result] = await Promise.all([
-            query.refetch(),
-            new Promise<void>((resolve) => setTimeout(resolve, 2000)),
-        ]);
-        setChecking(false);
-        if (!result.isSuccess) {
-            toast.add({
-                type: 'destructive',
-                title: 'Could not complete the checks',
-                description: 'The service status could not be refreshed. Please try again.',
-            });
-        } else {
-            const needsAttention = [
-                result.data.database,
-                result.data.cache,
-                result.data.email,
-            ].includes('unavailable');
-            toast.add({
-                type: needsAttention ? 'warning' : 'success',
-                title: needsAttention ? 'Checks complete · attention needed' : 'Checks complete',
-                description: needsAttention
-                    ? 'One or more services need attention. Review the status below.'
-                    : 'The latest service status is ready.',
-            });
-        }
-    };
     if (query.error && !query.data)
         return <DisplayError error={query.error} onRetry={() => void query.refetch()} />;
     const data = query.data;
@@ -73,15 +58,15 @@ export default function AdminServices() {
                 <Button
                     variant="outline"
                     className="h-10 w-36 shrink-0 gap-2 rounded-xl px-3 text-xs"
-                    disabled={checking || query.isFetching}
-                    aria-busy={checking}
-                    onClick={() => void checkAgain()}
+                    disabled={check.refreshing || query.isFetching}
+                    aria-busy={check.refreshing}
+                    onClick={() => void check.refresh()}
                 >
                     <RefreshCw
                         size={14}
                         className={cn(
                             'shrink-0',
-                            checking && 'animate-spin motion-reduce:animate-none'
+                            check.refreshing && 'animate-spin motion-reduce:animate-none'
                         )}
                         aria-hidden="true"
                     />{' '}

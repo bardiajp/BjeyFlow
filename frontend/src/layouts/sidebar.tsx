@@ -299,7 +299,13 @@ export function AppSidebar({
                 joined={!!league.data?.joined}
                 collapsed={collapsed}
             />
-            <nav className="grid w-full shrink-0 gap-1" aria-label="Task views">
+            <div
+                className="max-h-[min(30dvh,16rem)] w-full shrink-0 overflow-y-auto overscroll-contain [scrollbar-width:thin] lg:max-h-none lg:overflow-visible"
+                role="region"
+                aria-label="Main navigation"
+                tabIndex={0}
+            >
+            <nav className="grid w-full gap-1" aria-label="Task views">
                 <NavItem
                     to="/inbox"
                     collapsed={collapsed}
@@ -374,7 +380,8 @@ export function AppSidebar({
                     />
                 </nav>
             )}
-            <section className="mt-7 flex min-h-0 w-full flex-1 flex-col">
+            </div>
+            <section className="mt-3 flex min-h-0 w-full flex-1 flex-col lg:mt-7">
                 <div
                     className={cn(
                         'relative mb-2 flex h-9 shrink-0 items-center border-t border-slate-200/80 px-3'

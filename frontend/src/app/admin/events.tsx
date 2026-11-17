@@ -12,6 +12,7 @@ import { formatTimestamp } from '@/lib/date';
 import { PendingSignups } from './pending-signups';
 import { Badge } from '@/components/ui/badge';
 import { LabeledSelect } from '@/components/form/labeled-select';
+import { useRefresh } from '@/hooks/use-refresh';
 
 export default function AdminEvents({ kind }: { kind: 'activity' | 'emails' | 'errors' }) {
     const [search, setSearch] = useState('');
@@ -22,6 +23,9 @@ export default function AdminEvents({ kind }: { kind: 'activity' | 'emails' | 'e
         queryKey: ['admin', kind, page, debounced, status],
         queryFn: () => getAdminEvents(kind, page, debounced, status === 'all' ? '' : status),
     });
+    const refresh = useRefresh(async () => {
+        await query.refetch({ throwOnError: true });
+    }, 'Events refreshed');
     const copy =
         kind === 'activity'
             ? 'An accountable trail of sign-ins and administrator actions. Passwords and reset tokens are never recorded.'
@@ -65,10 +69,11 @@ export default function AdminEvents({ kind }: { kind: 'activity' | 'emails' | 'e
                         variant="outline"
                         className="rounded-xl"
                         aria-label="Refresh events"
-                        isPending={query.isRefetching}
-                        onClick={() => void query.refetch()}
+                        disabled={query.isRefetching || refresh.refreshing}
+                        aria-busy={refresh.refreshing}
+                        onClick={() => void refresh.refresh()}
                     >
-                        <RefreshCw size={15} />
+                        <RefreshCw size={15} className={cn(refresh.refreshing && 'animate-spin motion-reduce:animate-none')} />
                     </Button>
                 </div>
                 {query.isPending ? (

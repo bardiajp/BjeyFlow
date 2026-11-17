@@ -33,6 +33,7 @@ import { TaskPreferences, DatePreferences } from './task-preferences';
 import { NotificationSettings } from './notifications';
 import { DesktopSettings } from './desktop';
 import { UsernameSettings } from './username';
+import { DeleteAccount } from './delete-account';
 
 function SettingsGroup({
     id,
@@ -108,7 +109,7 @@ export default function SettingsPage() {
                     </Button>
                 </div>
             )}
-            <div className="grid min-w-0 items-start gap-4 sm:gap-5 lg:grid-cols-2">
+            <div className="grid min-w-0 grid-cols-1 items-start gap-4 sm:gap-5 lg:grid-cols-2">
                 <div className="grid min-w-0 gap-4 sm:gap-5">
                     <SettingsGroup
                         id="settings-account"
@@ -169,6 +170,7 @@ export default function SettingsPage() {
                             </div>
                         </section>
                         <SessionSettings />
+                        <DeleteAccount />
                     </SettingsGroup>
                     <SettingsGroup
                         id="settings-notifications"

@@ -19,6 +19,7 @@ import { setValidationErrors } from '@/lib/form';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { EditorHeader } from '@/components/editor-header';
 import { InlineConfirm } from '@/components/inline-confirm';
+import { FormActions } from '@/components/form-actions';
 
 export function ProjectEditor({
     open = true,
@@ -264,7 +265,7 @@ export function ProjectEditor({
                             </InlineConfirm>
                         </div>
                     )}
-                    <footer className="sticky -bottom-6 z-10 -mx-6 -mb-6 flex items-center justify-end gap-2 border-t border-slate-200/80 bg-white/95 px-6 py-4 shadow-[0_-8px_24px_-16px_#02304730] backdrop-blur-xl sm:-bottom-8 sm:-mx-8 sm:-mb-8 sm:px-8">
+                    <FormActions className="sticky -bottom-6 z-10 -mx-6 -mb-6 border-t border-slate-200/80 bg-white/95 px-6 py-4 shadow-[0_-8px_24px_-16px_#02304730] backdrop-blur-xl sm:-bottom-8 sm:-mx-8 sm:-mb-8 sm:px-8">
                         <span className="mr-auto hidden text-[10px] text-slate-400 sm:block">
                             A little space. A lot of possibility.
                         </span>
@@ -286,7 +287,7 @@ export function ProjectEditor({
                             {project ? 'Save changes' : 'Create project'}
                             <ArrowUpRight size={15} />
                         </Button>
-                    </footer>
+                    </FormActions>
                 </form>
             </DrawerContent>
         </Drawer>

@@ -37,6 +37,11 @@ class UserManagementViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         user_management_service.delete_user(self.request.user, instance)
 
+    @action(detail=True, methods=["post"], url_path="transfer-superuser")
+    def transfer_superuser(self, request, *args, **kwargs):
+        instance = user_management_service.transfer_superuser(request.user, self.get_object())
+        return Response(self.get_serializer(instance).data)
+
     @action(detail=True, methods=["post"])
     def disable(self, request, *args, **kwargs):
         instance = user_management_service.update_user(

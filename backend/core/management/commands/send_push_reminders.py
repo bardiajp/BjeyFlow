@@ -80,12 +80,14 @@ class Command(BaseCommand):
                     if not created or quiet:
                         continue
                     try:
-                        send_push(
+                        delivered = send_push(
                             subscription,
                             "task_reminder",
                             f"/today?task={task.pk}",
                             ttl=90,
                         )
+                        if not delivered:
+                            break
                     except (WebPushException, RequestException):
                         delivery.delete()
                         self.stderr.write(

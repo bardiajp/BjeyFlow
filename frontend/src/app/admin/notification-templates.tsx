@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BellRing, Smartphone } from 'lucide-react';
+import { BellRing, RefreshCw, Smartphone } from 'lucide-react';
 import { axiosInstance } from '@/lib/api';
 import { AccentTitle } from '@/components/accent-title';
 import DisplayError from '@/components/display-error';
 import Loading from '@/components/loading';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { NotificationArtCard } from '@/components/notification-art-card';
 
 interface NotificationTemplate {
     id: string;
@@ -13,6 +15,7 @@ interface NotificationTemplate {
     description: string;
     title: string;
     body: string;
+    image?: string;
 }
 
 export default function AdminNotificationTemplates() {
@@ -21,10 +24,11 @@ export default function AdminNotificationTemplates() {
         queryFn: async () =>
             (await axiosInstance.get<NotificationTemplate[]>('/api/admin/notification-templates/'))
                 .data,
+        refetchOnMount: 'always',
     });
     const [selected, setSelected] = useState('task_reminder');
     if (query.isPending) return <Loading />;
-    if (query.error)
+    if (query.isLoadingError)
         return <DisplayError error={query.error} onRetry={() => void query.refetch()} />;
     const template = query.data.find((item) => item.id === selected)!;
     return (
@@ -39,9 +43,21 @@ export default function AdminNotificationTemplates() {
                         notification is sent.
                     </p>
                 </div>
-                <span className="bg-accent text-muted-foreground rounded-full px-3 py-2 text-[10px]">
-                    Read-only preview
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className="bg-accent text-muted-foreground rounded-full px-3 py-2 text-[10px]">
+                        Read-only preview
+                    </span>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="h-9 gap-2 rounded-xl text-xs"
+                        disabled={query.isFetching}
+                        onClick={() => void query.refetch()}
+                    >
+                        <RefreshCw size={14} aria-hidden="true" />
+                        {query.isFetching ? 'Refreshing…' : 'Refresh previews'}
+                    </Button>
+                </div>
             </header>
             <div className="grid min-h-0 flex-1 lg:grid-cols-[260px_minmax(0,1fr)]">
                 <nav
@@ -81,6 +97,30 @@ export default function AdminNotificationTemplates() {
                         <Smartphone size={16} />
                         Illustrative device preview
                     </div>
+                    {query.isRefetchError && (
+                        <div className="mb-4">
+                            <DisplayError error={query.error} onRetry={() => void query.refetch()} />
+                        </div>
+                    )}
+                    {template.image && (
+                        <div className="mx-auto mb-6 max-w-3xl">
+                            <h2 className="text-muted-foreground mb-2 text-xs font-medium">
+                                In-app notification · light and dark
+                            </h2>
+                            <div className="grid gap-4 xl:grid-cols-2">
+                                {(['light', 'dark'] as const).map((theme) => (
+                                    <NotificationArtCard
+                                        key={theme}
+                                        title={template.title}
+                                        body={template.body}
+                                        image={template.image!}
+                                        theme={theme}
+                                        className="min-h-40"
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
                     <div className="mx-auto grid max-w-3xl gap-4 xl:grid-cols-2">
                         {(
                             [
@@ -126,13 +166,21 @@ export default function AdminNotificationTemplates() {
                                     <p className={cn('mt-1 text-xs leading-6', mode.secondary)}>
                                         {template.body}
                                     </p>
+                                    {template.image && (
+                                        <img
+                                            src={template.image}
+                                            alt={`${template.name} illustration`}
+                                            className="mt-3 aspect-[75/32] w-full rounded-xl object-cover"
+                                        />
+                                    )}
                                 </div>
                             </section>
                         ))}
                     </div>
                     <p className="text-muted-foreground mx-auto mt-5 max-w-3xl text-xs leading-6">
-                        Device operating systems control the final appearance. Task titles are
-                        hidden to protect lock-screen privacy.
+                        The full-background card is shown inside BjeyFlow. System notifications
+                        use the device's layout and may not show the image. Task titles are hidden
+                        to protect lock-screen privacy.
                     </p>
                 </div>
             </div>

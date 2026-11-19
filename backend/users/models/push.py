@@ -53,3 +53,35 @@ class LeaguePushDelivery(models.Model):
                 fields=["subscription", "entry", "kind"], name="league_push_delivery_unique"
             )
         ]
+
+
+class NotificationState(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    snapshot = models.JSONField(default=dict)
+
+
+class NotificationEvent(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    key = models.CharField(max_length=200)
+    template = models.CharField(max_length=40)
+    url = models.CharField(max_length=255)
+    body = models.CharField(max_length=255, blank=True)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "key"], name="notification_event_unique")
+        ]
+
+
+class NotificationDelivery(models.Model):
+    event = models.ForeignKey(NotificationEvent, on_delete=models.CASCADE)
+    subscription = models.ForeignKey(PushSubscription, on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["event", "subscription"], name="notification_delivery_unique"
+            )
+        ]

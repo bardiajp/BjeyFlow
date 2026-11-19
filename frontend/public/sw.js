@@ -39,16 +39,50 @@ self.addEventListener('fetch', (event) => {
 
 self.addEventListener('push', (event) => {
     if (!event.data) return;
-    const payload = event.data.json();
-    const url = new URL(payload.url, self.location.origin);
+    let payload;
+    try {
+        payload = event.data.json();
+    } catch {
+        payload = {};
+    }
+    if (!payload || typeof payload !== 'object') payload = {};
+    let url;
+    try {
+        url = new URL(payload.url || '/', self.location.origin);
+    } catch {
+        url = new URL('/', self.location.origin);
+    }
+    let image;
+    try {
+        if (payload.image) {
+            const imageUrl = new URL(payload.image, self.location.origin);
+            if (imageUrl.origin === self.location.origin) image = imageUrl.href;
+        }
+    } catch {
+        // An invalid image must not prevent the notification from being shown.
+    }
     event.waitUntil(
-        self.registration.showNotification(payload.title, {
-            body: payload.body,
+        Promise.all([self.registration.showNotification(payload.title || 'BjeyFlow', {
+            body: payload.body || 'Open BjeyFlow for an update.',
             icon: '/icons/notification.png',
             badge: '/icons/notification.png',
+            ...(image ? { image } : {}),
             tag: payload.tag,
             data: { url: url.origin === self.location.origin ? url.href : self.location.origin },
-        })
+        }), self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+            const visible = clients.find((client) =>
+                client.visibilityState === 'visible' && new URL(client.url).origin === self.location.origin
+            );
+            if (visible && image) {
+                visible.postMessage({
+                    type: 'bjeyflow-push',
+                    title: payload.title || 'BjeyFlow',
+                    body: payload.body || 'Open BjeyFlow for an update.',
+                    url: url.origin === self.location.origin ? url.href : self.location.origin,
+                    image,
+                });
+            }
+        })])
     );
 });
 
@@ -56,7 +90,13 @@ self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     event.waitUntil(
         (async () => {
-            const target = event.notification.data.url;
+            let target = self.location.origin;
+            try {
+                const url = new URL(event.notification.data?.url || '/', self.location.origin);
+                if (url.origin === self.location.origin) target = url.href;
+            } catch {
+                // Fall back to the app home page.
+            }
             const windows = await self.clients.matchAll({
                 type: 'window',
                 includeUncontrolled: true,
@@ -65,8 +105,8 @@ self.addEventListener('notificationclick', (event) => {
                 (client) => new URL(client.url).origin === self.location.origin
             );
             if (existing) {
-                await existing.navigate(target);
-                return existing.focus();
+                const navigated = await existing.navigate(target);
+                if (navigated) return navigated.focus();
             }
             return self.clients.openWindow(target);
         })()

@@ -122,7 +122,7 @@ services:
       backend:
         condition: service_healthy
     entrypoint: ["/bin/sh", "-c"]
-    command: ["while :; do python manage.py advance_leagues; python manage.py send_league_notifications; python manage.py send_push_reminders; sleep 60; done"]
+    command: ["while :; do python manage.py advance_leagues; python manage.py send_league_notifications; python manage.py send_push_reminders; python manage.py send_engagement_notifications; sleep 60; done"]
     networks: [app]
     read_only: true
     tmpfs: [/tmp]

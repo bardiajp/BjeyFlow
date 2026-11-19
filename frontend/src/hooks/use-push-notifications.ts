@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
 import { axiosInstance } from '@/lib/api';
 import { usePreferences } from '@/store/use-preferences';
 import useUserStore from '@/store/use-user-store';
@@ -48,16 +49,29 @@ export function usePushNotifications() {
     useEffect(() => {
         if (!supported) return;
         let active = true;
-        void navigator.serviceWorker
-            .getRegistration('/')
-            .then((registration) => registration?.pushManager.getSubscription())
-            .then((value) => {
-                if (active) setSubscription(value ?? null);
-            });
+        const refresh = () => {
+            setPermission(Notification.permission);
+            void navigator.serviceWorker
+                .getRegistration('/')
+                .then((registration) => registration?.pushManager.getSubscription())
+                .then((value) => {
+                    if (active) setSubscription(value ?? null);
+                })
+                .catch((error: unknown) => console.error('Could not check push subscription:', error));
+        };
+        refresh();
+        const onVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                refresh();
+                void client.invalidateQueries({ queryKey: ['push-devices', userId] });
+            }
+        };
+        document.addEventListener('visibilitychange', onVisibilityChange);
         return () => {
             active = false;
+            document.removeEventListener('visibilitychange', onVisibilityChange);
         };
-    }, [supported, userId]);
+    }, [supported, userId, client]);
     const enable = useMutation({
         mutationFn: async () => {
             if (!config.data?.configured)
@@ -101,7 +115,16 @@ export function usePushNotifications() {
     const sendTest = useMutation({
         mutationFn: async () => {
             if (!subscription) throw new Error('Enable notifications on this device first.');
-            await axiosInstance.post('users/auth/push/test/', { endpoint: subscription.endpoint });
+            try {
+                await axiosInstance.post('users/auth/push/test/', { endpoint: subscription.endpoint });
+            } catch (error) {
+                if (axios.isAxiosError(error) && error.response?.status === 410) {
+                    await subscription.unsubscribe();
+                    setSubscription(null);
+                    await client.invalidateQueries({ queryKey: ['push-devices', userId] });
+                }
+                throw error;
+            }
         },
     });
     return {

@@ -23,6 +23,12 @@ export interface Preferences {
     hourCycle: 'h12' | 'h23';
     timeZone: string;
     browserNotifications: boolean;
+    returnNotifications: boolean;
+    goalNotifications: boolean;
+    leagueRankNotifications: boolean;
+    weeklyReviewNotifications: boolean;
+    dailyPlanNotifications: boolean;
+    dailyPlanTime: string;
     reminderMinutes: number;
     quietHours: boolean;
     quietStart: string;
@@ -45,6 +51,12 @@ const defaults: Preferences = {
     hourCycle: 'h23',
     timeZone: 'system',
     browserNotifications: false,
+    returnNotifications: false,
+    goalNotifications: false,
+    leagueRankNotifications: false,
+    weeklyReviewNotifications: false,
+    dailyPlanNotifications: false,
+    dailyPlanTime: '09:00',
     reminderMinutes: 15,
     quietHours: false,
     quietStart: '22:00',

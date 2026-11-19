@@ -38,11 +38,23 @@ export function FocusSession() {
                     Notification.permission === 'granted' &&
                     'serviceWorker' in navigator
                 ) {
+                    if (document.visibilityState === 'visible') {
+                        window.dispatchEvent(new CustomEvent('bjeyflow-notification', {
+                            detail: {
+                                type: 'bjeyflow-push',
+                                title: 'Focus session complete',
+                                body: "Nice work! It's time for a well-earned break.",
+                                image: '/images/notification-focus-complete.webp?v=1',
+                                url: '/today',
+                            },
+                        }));
+                    }
                     void navigator.serviceWorker.ready
                         .then((registration) =>
                             registration.showNotification('Focus session complete', {
-                                body: 'Nice work. Take a short break—you earned it.',
+                                body: "Nice work! It's time for a well-earned break.",
                                 icon: '/icons/notification.png',
+                                ...{ image: '/images/notification-focus-complete.webp?v=1' },
                                 tag: 'focus-complete',
                                 data: { url: new URL('/today', window.location.origin).href },
                             })

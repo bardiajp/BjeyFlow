@@ -1,4 +1,5 @@
 from django.urls import path
+from .recommendations import AdminRecommendationsView
 
 from .views import (
     EmailTemplatesView,
@@ -15,6 +16,7 @@ from .views import (
 )
 
 urlpatterns = [
+    path("recommendations/", AdminRecommendationsView.as_view(), name="admin-recommendations"),
     path(
         "notification-templates/",
         PushTemplatesView.as_view(),

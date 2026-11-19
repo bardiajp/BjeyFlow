@@ -25,20 +25,32 @@
             aria-label="Loading your workspace"
         >
             <div class="app-loading-art" aria-hidden="true">
-                <span class="app-loading-orbit"></span>
-                <span class="app-loading-ring"></span>
+                <span class="app-loading-glow"></span>
                 <img class="app-loading-orb" src="/images/ball.svg" alt="" width="88" height="88" />
+                <svg class="app-loading-face" viewBox="0 0 88 88">
+                    <g class="app-loading-eyes">
+                        <ellipse cx="34" cy="46" rx="2.5" ry="3.5" />
+                        <ellipse cx="54" cy="46" rx="2.5" ry="3.5" />
+                    </g>
+                    <path d="M39 57Q44 61 49 57" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
             </div>
-            <p class="app-loading-eyebrow">A LITTLE MORE FLOW</p>
-            <h1 class="app-loading-brand">BjeyFlow<span class="app-loading-dot">.</span></h1>
-            <p class="app-loading-message">Getting your space ready. Take a little breath.</p>
-            <div class="app-loading-track" aria-hidden="true"><span></span></div>
+            <div class="app-loading-sea" aria-hidden="true">
+                <div class="app-loading-wave-travel">
+                    <svg class="app-loading-water" viewBox="0 0 300 120" preserveAspectRatio="none">
+                        <path class="app-loading-wave-back" d="M0 120C60 120 80 78 145 78S235 120 300 120Z" />
+                        <path class="app-loading-wave-front" d="M0 120C70 120 95 30 150 30S230 120 300 120Z" />
+                    </svg>
+                </div>
+            </div>
+            <h1 class="app-loading-brand">BjeyFlow<span class="app-loading-dot" aria-hidden="true"></span></h1>
+            <p class="app-loading-message">Getting your workspace ready</p>
             <p class="app-loading-footer">Less noise. More focus.</p>
         </section>
         <noscript
             ><section class="app-loading">
                 <h1 class="app-loading-brand">
-                    JavaScript is needed<span class="app-loading-dot">.</span>
+                    JavaScript is needed
                 </h1>
                 <p class="app-loading-message">Enable JavaScript to open your workspace.</p>
             </section></noscript

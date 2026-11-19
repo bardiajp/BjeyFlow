@@ -34,6 +34,7 @@ import { NotificationSettings } from './notifications';
 import { DesktopSettings } from './desktop';
 import { UsernameSettings } from './username';
 import { DeleteAccount } from './delete-account';
+import { RecommendationSettings } from './recommendations';
 
 function SettingsGroup({
     id,
@@ -178,6 +179,13 @@ export default function SettingsPage() {
                         description="Choose how and when BjeyFlow keeps you updated."
                     >
                         <NotificationSettings />
+                    </SettingsGroup>
+                    <SettingsGroup
+                        id="settings-recommendations"
+                        title="Your ideas"
+                        description="Help shape a more useful BjeyFlow."
+                    >
+                        <RecommendationSettings />
                     </SettingsGroup>
                 </div>
                 <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 sm:gap-5">

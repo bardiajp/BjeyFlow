@@ -151,9 +151,13 @@ For the initial rollout also start it with
 after configuring VAPID. Do not start multiple workers without retaining the
 database uniqueness and row-lock protections.
 
-Subscriptions belong to a user and a login session. Logout, password changes,
-revocation or session expiry stops delivery; users must enable a device again
-after signing in. Reminder delivery is best effort, may be delayed by the push
+Subscriptions belong to a user and a login session. Natural JWT/session expiry
+does not cancel an opted-in device. When the app is opened after a new login,
+an existing non-revoked subscription is rebound to the current session.
+Logout, password changes and explicit session revocation still stop delivery;
+revoked devices require explicit enablement rather than silent restoration.
+Expired sessions that still own push devices remain visible in session settings.
+Reminder delivery is best effort, may be delayed by the push
 service, expires quickly, and is not replayed after quiet hours. Date-only tasks
 default to 09:00 in the chosen time zone. Notification text hides task titles.
 Focus completion uses a local notification only while the app remains open. Test

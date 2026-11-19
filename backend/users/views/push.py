@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from cryptography.hazmat.primitives.asymmetric import ec
 from django.utils import timezone
+from django.db import transaction
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -18,6 +19,11 @@ from users.services.push import push_configured, send_push
 class PushThrottle(UserRateThrottle):
     scope = "push"
     rate = "20/hour"
+
+
+class PushSyncThrottle(UserRateThrottle):
+    scope = "push_sync"
+    rate = "120/hour"
 
 
 class SubscriptionSerializer(serializers.Serializer):
@@ -91,13 +97,19 @@ class PushSubscriptionsView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [PushThrottle]
 
+    def get_throttles(self):
+        if self.request.method == "GET":
+            return []
+        if self.request.method == "PATCH":
+            return [PushSyncThrottle()]
+        return super().get_throttles()
+
     def get(self, request):
         return Response(
             list(
                 PushSubscription.objects.filter(
                     user=request.user,
                     session__revoked_at__isnull=True,
-                    session__expires_at__gt=timezone.now(),
                 ).values_list("endpoint", flat=True)
             )
         )
@@ -135,6 +147,28 @@ class PushSubscriptionsView(APIView):
         PushSubscription.objects.filter(user=request.user, endpoint=endpoint).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @transaction.atomic
+    def patch(self, request):
+        """Rebind an existing opted-in device, without restoring revoked devices."""
+        subscription = PushSubscription.objects.select_for_update().filter(
+            user=request.user, endpoint=request.data.get("endpoint", ""),
+            session__revoked_at__isnull=True,
+        ).first()
+        if subscription is None:
+            return Response(
+                {"detail": "Enable notifications on this device first."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        session = AccountSession.objects.filter(
+            user=request.user, token_id=request.auth["jti"],
+            revoked_at__isnull=True, expires_at__gt=timezone.now(),
+        ).first()
+        if session is None:
+            return Response({"detail": "Please sign in again."}, status=status.HTTP_401_UNAUTHORIZED)
+        subscription.session = session
+        subscription.save(update_fields=["session", "updated_at"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class PushTestView(APIView):
     permission_classes = [IsAuthenticated]
@@ -145,7 +179,6 @@ class PushTestView(APIView):
             user=request.user,
             endpoint=request.data.get("endpoint", ""),
             session__revoked_at__isnull=True,
-            session__expires_at__gt=timezone.now(),
         ).first()
         if not subscription:
             return Response(

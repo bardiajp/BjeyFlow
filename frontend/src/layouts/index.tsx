@@ -14,6 +14,7 @@ import { PageTransition } from '@/components/page-transition';
 import { SearchDialog } from './search-dialog';
 import { useSiteSettings } from '@/hooks/use-site-settings';
 import { usePreferences } from '@/store/use-preferences';
+import { InAppNotification } from '@/components/in-app-notification';
 
 export default function Layout() {
     const location = useLocation();
@@ -81,6 +82,7 @@ export default function Layout() {
         '/admin/emails': 'Email',
         '/admin/email-templates': 'Email templates',
         '/admin/notification-templates': 'Notification templates',
+        '/admin/recommendations': 'Suggestions',
         '/admin/errors': 'Errors',
         '/admin/settings': 'Workspace settings',
     };
@@ -245,6 +247,7 @@ export default function Layout() {
                         navigate('/inbox');
                     }}
                 />
+                <InAppNotification />
             </div>
         </PageTransition>
     );

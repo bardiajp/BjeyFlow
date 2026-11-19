@@ -195,6 +195,12 @@ over clear day/night symbols, so night rain still shows rain.
 
 ## Personal account settings
 
+Users can submit feature suggestions from Settings → Your ideas. Administrators
+and system administrators can search and read them at `/admin/recommendations`.
+Suggestions include a title, description, author username, and submission time;
+they are not public. Submission requires login and is limited to five per hour
+per user. Apply `administration.0003_featurerecommendation` before using this feature.
+
 `/settings` supports profile editing (display name, optimized WebP avatar, personal
 space name and north star), account-synced preferences, task defaults, Persian or
 Gregorian calendars, week start, 12/24-hour time and IANA time zones. Preferences
@@ -210,13 +216,43 @@ on the next authenticated request. Existing JWT sessions are registered when
 they next make an authenticated request. Password changes and administrative
 password resets revoke recorded sessions.
 
-Browser reminders require per-device permission, HTTPS (or localhost), and an
-open application tab; background throttling can delay delivery. They honor the
-selected time zone, reminder lead time and quiet hours. Tasks without a due time
-use 09:00. Reminders suppressed during quiet hours are not replayed. Notification
-permissions stay device-local, even though reminder preferences sync. No Push
-service or closed-app notification delivery is provided. Calendar selection
-changes presentation and picking, not the underlying ISO task dates.
+Web Push reminders require a production build, a configured VAPID key pair,
+the notification scheduler, and permission on each device. They can arrive
+when the app is closed, subject to browser, network and device restrictions.
+On iOS, install the app to the Home Screen before enabling notifications.
+Reminders honor the selected time zone, lead time and quiet hours; tasks without
+a due time use 09:00, and reminders suppressed during quiet hours are not
+replayed. Preferences sync across the account, while permission and subscriptions
+are device-specific. Focus timer alerts require the timer page to remain open.
+See `docker/production/README.md` for push and scheduler configuration.
+Calendar selection changes presentation and picking, not underlying ISO dates.
+
+Device opt-in survives natural login-token expiry. Opening the app checks the
+browser subscription after the service worker is ready and rebinds an existing
+non-revoked device to the current login session. Logout, password changes and
+explicit session revocation still stop push delivery; these devices are not
+silently re-enabled. Browser permission revocation or removed site data may
+require enabling the device again. Temporary inspection/network failures are
+reported as errors rather than interpreted as a disabled device.
+
+Optional notifications are available in Settings → Notifications: a return
+invitation after three days away, goal progress at 80% and completion, entry into
+the league promotion zone, a weekly task-completion summary, and a daily plan at
+a chosen time. These categories start disabled and require the account reminder
+switch and a registered device. The worker establishes a baseline for existing
+goals and ranks rather than sending historical achievements. Goal achievements
+are sent once per goal; promotion-zone updates once per league entry; daily and
+weekly summaries once per period. Inactivity uses the latest authenticated
+session activity across devices, and a return invitation is not repeated until
+new activity occurs. No private task or goal titles are included.
+
+Apply the users notification migration and run `send_engagement_notifications`
+every minute alongside the existing reminder commands. Production Compose's
+scheduler includes it. Quiet hours defer these optional updates only while their
+event remains relevant (daily plans expire after one hour). Delivery markers
+prevent normal repeated sends and failed push requests are retried; exactly-once
+delivery across a network/process failure cannot be guaranteed. All new templates
+and their light/dark illustrations are listed in the admin template gallery.
 
 Apply `users.0004_user_avatar_user_preferences_accountsession` and install the
 updated backend dependencies before serving these settings.
@@ -365,8 +401,8 @@ The page supports list/board views, creating projects and tasks with subtasks,
 editing tasks, completing/reopening tasks, updating checklists, and deleting
 tasks. Schedule entries come from actual task due times, not calendar events.
 The 25-minute focus timer is browser-local and resets when its page unmounts;
-there is no focus-session persistence, Google Calendar integration, or push
-notification service. No workspaces or fabricated comments/files are shown.
+there is no focus-session persistence or Google Calendar integration.
+No workspaces or fabricated comments/files are shown.
 
 Each frontend entity or feature lives under `src/app/<feature>/`:
 

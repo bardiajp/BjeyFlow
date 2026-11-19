@@ -24,7 +24,6 @@ class Command(BaseCommand):
         subscriptions = PushSubscription.objects.filter(
             user__is_active=True,
             session__revoked_at__isnull=True,
-            session__expires_at__gt=now,
             user__league_membership__is_active=True,
         ).select_related("user", "user__league_membership")
         for subscription in subscriptions.iterator():

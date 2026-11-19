@@ -23,7 +23,6 @@ class Command(BaseCommand):
         subscriptions = PushSubscription.objects.filter(
             user__is_active=True,
             session__revoked_at__isnull=True,
-            session__expires_at__gt=now,
         ).select_related("user")
         for subscription in subscriptions.iterator():
             preferences = subscription.user.preferences
@@ -80,12 +79,14 @@ class Command(BaseCommand):
                     if not created or quiet:
                         continue
                     try:
-                        send_push(
+                        delivered = send_push(
                             subscription,
                             "task_reminder",
                             f"/today?task={task.pk}",
                             ttl=90,
                         )
+                        if not delivered:
+                            break
                     except (WebPushException, RequestException):
                         delivery.delete()
                         self.stderr.write(

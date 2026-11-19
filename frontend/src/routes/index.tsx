@@ -15,6 +15,7 @@ import AdminEvents from '@/app/admin/events';
 import AdminSettings from '@/app/admin/settings';
 import AdminEmailTemplates from '@/app/admin/email-templates';
 import AdminNotificationTemplates from '@/app/admin/notification-templates';
+import AdminRecommendations from '@/app/admin/recommendations';
 import AppLoading from '@/components/app-loading';
 import Layout from '@/layouts';
 import useUserStore from '@/store/use-user-store';
@@ -55,6 +56,7 @@ export default function AppRoutes() {
                     <Route path="emails" element={<AdminEvents key="emails" kind="emails" />} />
                     <Route path="email-templates" element={<AdminEmailTemplates />} />
                     <Route path="notification-templates" element={<AdminNotificationTemplates />} />
+                    <Route path="recommendations" element={<AdminRecommendations />} />
                     <Route path="errors" element={<AdminEvents key="errors" kind="errors" />} />
                     <Route path="settings" element={<AdminSettings />} />
                 </Route>

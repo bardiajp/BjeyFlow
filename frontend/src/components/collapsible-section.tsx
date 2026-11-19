@@ -1,6 +1,7 @@
 import { useId, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ExpandableContent } from '@/components/expandable-content';
 
 export function CollapsibleSection({
     title,
@@ -33,9 +34,9 @@ export function CollapsibleSection({
                     {count}
                 </span>
             </button>
-            <div id={id} hidden={!open}>
+            <ExpandableContent id={id} open={open} keepMounted>
                 {children}
-            </div>
+            </ExpandableContent>
         </section>
     );
 }

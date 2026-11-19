@@ -144,7 +144,7 @@ def collect_events(user, local, now):
 def send_engagement_notifications(now=None):
     now = now or timezone.now()
     subscriptions = PushSubscription.objects.filter(
-        user__is_active=True, session__revoked_at__isnull=True, session__expires_at__gt=now,
+        user__is_active=True, session__revoked_at__isnull=True,
     ).select_related("user").order_by("user_id", "created_at")
     seen = set()
     for subscription in subscriptions.iterator():

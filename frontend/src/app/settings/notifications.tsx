@@ -10,14 +10,17 @@ import { usePushNotifications } from '@/hooks/use-push-notifications';
 export function NotificationSettings() {
     const preferences = usePreferences();
     const push = usePushNotifications();
-    const checking = push.supported && (push.config.isPending || push.devices.isPending);
+    const checking = push.checking;
+    const checkFailed = push.browser.isError || push.devices.isError;
     const status = checking
         ? 'Checking things for you'
-        : push.permission === 'denied'
-          ? 'A little help needed'
-          : push.enabled
-            ? 'This device is all set!'
-            : 'Let’s get you connected';
+        : checkFailed
+          ? 'Could not check this device'
+          : push.permission === 'denied'
+            ? 'A little help needed'
+            : push.enabled
+              ? 'This device is all set!'
+              : 'Let’s get you connected';
     return (
         <section
             id="notifications"
@@ -84,6 +87,7 @@ export function NotificationSettings() {
                         disabled={
                             !push.supported ||
                             checking ||
+                            checkFailed ||
                             push.permission === 'denied' ||
                             !push.config.data?.configured
                         }
@@ -142,8 +146,16 @@ export function NotificationSettings() {
                 </p>
             )}
             <DisplayError
+                onRetry={() => {
+                    void push.browser.refetch();
+                    void push.devices.refetch();
+                    void push.config.refetch();
+                    if (push.subscription && push.enabled) void push.sessionSync.refetch();
+                }}
                 error={
                     push.config.error ||
+                    push.browser.error ||
+                    push.sessionSync.error ||
                     push.devices.error ||
                     push.enable.error ||
                     push.disable.error ||

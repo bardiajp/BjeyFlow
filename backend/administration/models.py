@@ -1,6 +1,19 @@
+import uuid
+
 from django.conf import settings
 from django.core.validators import MaxValueValidator
 from django.db import models
+
+
+class FeatureRecommendation(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+    title = models.CharField(max_length=160)
+    description = models.TextField(max_length=2000)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
 
 
 class SiteSettings(models.Model):

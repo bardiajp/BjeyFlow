@@ -195,6 +195,12 @@ over clear day/night symbols, so night rain still shows rain.
 
 ## Personal account settings
 
+Users can submit feature suggestions from Settings → Your ideas. Administrators
+and system administrators can search and read them at `/admin/recommendations`.
+Suggestions include a title, description, author username, and submission time;
+they are not public. Submission requires login and is limited to five per hour
+per user. Apply `administration.0003_featurerecommendation` before using this feature.
+
 `/settings` supports profile editing (display name, optimized WebP avatar, personal
 space name and north star), account-synced preferences, task defaults, Persian or
 Gregorian calendars, week start, 12/24-hour time and IANA time zones. Preferences
@@ -220,6 +226,14 @@ replayed. Preferences sync across the account, while permission and subscription
 are device-specific. Focus timer alerts require the timer page to remain open.
 See `docker/production/README.md` for push and scheduler configuration.
 Calendar selection changes presentation and picking, not underlying ISO dates.
+
+Device opt-in survives natural login-token expiry. Opening the app checks the
+browser subscription after the service worker is ready and rebinds an existing
+non-revoked device to the current login session. Logout, password changes and
+explicit session revocation still stop push delivery; these devices are not
+silently re-enabled. Browser permission revocation or removed site data may
+require enabling the device again. Temporary inspection/network failures are
+reported as errors rather than interpreted as a disabled device.
 
 Optional notifications are available in Settings → Notifications: a return
 invitation after three days away, goal progress at 80% and completion, entry into

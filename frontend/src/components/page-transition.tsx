@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { useIsFetching, useQueryClient, type Query } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import AppLoading from '@/components/app-loading';
+import { isStartupLoadingFinished } from '@/lib/startup-loading-state';
 
 // Only wait for first loads, not background refreshes of existing data.
 const initialQueryFilters = {
@@ -24,11 +25,13 @@ export function PageTransition({
     const parentReady = useContext(PageRevealContext);
     // Initially nested content shares its parent's fade. Later route mounts animate themselves.
     const [sharedReveal] = useState(parentReady === false);
-    const [ready, setReady] = useState(sharedReveal);
+    const [ready, setReady] = useState(
+        () => sharedReveal || initialPageRevealed || isStartupLoadingFinished()
+    );
     const [loadingStartedAt] = useState(() =>
         initialPageRevealed
             ? performance.now()
-            : performance.getEntriesByName('app-loading-start')[0].startTime
+            : (performance.getEntriesByName('app-loading-start')[0]?.startTime ?? performance.now())
     );
     const queryClient = useQueryClient();
     const initialRequests = useIsFetching(initialQueryFilters);

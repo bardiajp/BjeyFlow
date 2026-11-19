@@ -82,6 +82,7 @@ export default function Layout() {
         '/admin/emails': 'Email',
         '/admin/email-templates': 'Email templates',
         '/admin/notification-templates': 'Notification templates',
+        '/admin/recommendations': 'Suggestions',
         '/admin/errors': 'Errors',
         '/admin/settings': 'Workspace settings',
     };

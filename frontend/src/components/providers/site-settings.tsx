@@ -14,7 +14,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
         refetchInterval: 60_000,
     });
     if (query.isPending) return <AppLoading />;
-    if (query.error)
+    if (query.isLoadingError)
         return <DisplayError error={query.error} fullPage onRetry={() => void query.refetch()} />;
     const settings = query.data;
     return (

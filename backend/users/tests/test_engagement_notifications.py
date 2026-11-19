@@ -157,3 +157,9 @@ class EngagementNotificationTests(TestCase):
         AccountSession.objects.filter(pk=self.session.pk).update(revoked_at=self.now)
         send_engagement_notifications(self.now)
         send.assert_not_called()
+
+    @patch("users.services.engagement_notifications.send_push", return_value=True)
+    def test_natural_session_expiry_does_not_stop_opted_in_reminders(self, send):
+        AccountSession.objects.filter(pk=self.session.pk).update(expires_at=self.now - timedelta(hours=1))
+        send_engagement_notifications(self.now)
+        self.assertEqual(send.call_count, 1)

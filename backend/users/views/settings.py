@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated
@@ -74,8 +75,10 @@ class SessionsView(APIView):
 
     def get(self, request):
         sessions = request.user.account_sessions.filter(
-            revoked_at__isnull=True, expires_at__gt=timezone.now()
-        )
+            revoked_at__isnull=True,
+        ).filter(
+            Q(expires_at__gt=timezone.now()) | Q(push_subscriptions__isnull=False)
+        ).distinct()
         return Response(
             [
                 {

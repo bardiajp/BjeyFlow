@@ -6,6 +6,7 @@ from users.views.management import UserManagementViewSet
 from users.views.settings import PreferencesView, ProfileView, SessionsView, UsernameView
 from users.views.push import PushConfigView, PushSubscriptionsView, PushTestView
 from users.views.signup import SignupResendView, SignupVerifyView, SignupView
+from administration.recommendations import SubmitRecommendationView
 from users.views.password_reset import (
     PasswordResetRequestView,
     PasswordResetConfirmView,
@@ -15,6 +16,7 @@ router = SimpleRouter()
 router.register(r"", UserManagementViewSet, basename="users")
 
 urlpatterns = [
+    path("auth/recommendations/", SubmitRecommendationView.as_view(), name="submit-recommendation"),
     path("auth/push/config/", PushConfigView.as_view(), name="push-config"),
     path(
         "auth/push/subscriptions/",

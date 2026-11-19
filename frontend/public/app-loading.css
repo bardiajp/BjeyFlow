@@ -16,12 +16,18 @@
     box-sizing: border-box;
     overflow: hidden;
     padding: 32px 24px;
-    background:
-        radial-gradient(ellipse at 50% 42%, #8ecae612, transparent 62%),
-        var(--workspace, light-dark(#f6f8fa, #0b1822));
+    background: var(--workspace, light-dark(#f6f8fa, #0b1822));
     color: var(--loading-ink);
-    font-family: Arial, Helvetica, sans-serif;
+    /* Keep startup typography stable when the app's web fonts arrive. */
+    font-family: system-ui, sans-serif;
     text-align: center;
+    opacity: 1;
+    transition: opacity 400ms ease-out;
+}
+
+.app-loading[data-leaving='true'] {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .app-loading[hidden] {
@@ -29,39 +35,95 @@
 }
 
 .app-loading-art {
-    position: relative;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     display: grid;
-    width: 176px;
-    height: 176px;
-    margin-bottom: 24px;
+    width: 120px;
+    height: 120px;
     place-items: center;
 }
 
-.app-loading-orbit {
+.app-loading-glow {
     position: absolute;
     inset: 0;
-    border: 1px solid #8ecae626;
-    border-radius: 50%;
-    animation: loading-orbit 12s linear infinite;
+    background: radial-gradient(ellipse at center, #8ecae626, transparent 65%);
 }
 
-.app-loading-orbit::after {
+.app-loading-wave-travel {
     position: absolute;
-    top: 19px;
-    right: 20px;
-    width: 7px;
-    height: 7px;
+    inset: 0;
+    will-change: transform;
+    animation: loading-water-travel 1.2s cubic-bezier(0.35, 0, 0.65, 1) infinite alternate;
+}
+
+.app-loading-water {
+    position: absolute;
+    bottom: 0;
+    left: -22.5%;
+    width: 45%;
+    height: 100%;
+    transform-origin: center bottom;
+    will-change: transform;
+    animation: loading-water-impact 1.2s cubic-bezier(0.35, 0, 0.65, 1) infinite alternate;
+}
+
+.app-loading-sea {
+    position: absolute;
+    inset: auto 0 0;
+    height: clamp(72px, 15%, 140px);
+    overflow: hidden;
+    pointer-events: none;
+    background: linear-gradient(transparent 75%, #8ecae612);
+}
+
+.app-loading-sea::before,
+.app-loading-sea::after {
+    position: absolute;
+    bottom: 20%;
+    width: 4px;
+    height: 12px;
     border-radius: 50%;
-    background: #fb8500;
-    box-shadow: 0 0 14px #fb850033;
+    background: #8ecae6;
+    box-shadow: 8px 9px 0 -1px #539fbe, 16px 17px 0 -1px #8ecae6;
+    opacity: 0;
     content: '';
+    pointer-events: none;
 }
 
-.app-loading-ring {
+.app-loading-sea::before {
+    left: 2px;
+    animation: loading-splash-left 2.4s linear infinite;
+}
+
+.app-loading-sea::after {
+    right: 2px;
+    box-shadow: -8px 9px 0 -1px #539fbe, -16px 17px 0 -1px #8ecae6;
+    animation: loading-splash-right 2.4s linear infinite;
+}
+
+.app-loading-face {
     position: absolute;
-    inset: 18px;
-    border: 1px dashed #8ecae633;
-    border-radius: 50%;
+    width: 88px;
+    height: 88px;
+    color: #073b60;
+}
+
+.app-loading-eyes {
+    fill: currentColor;
+    will-change: transform;
+    animation: loading-look 1.2s cubic-bezier(0.35, 0, 0.65, 1) infinite alternate;
+}
+
+.app-loading-wave-back {
+    fill: #539fbe;
+    opacity: 0.22;
+}
+
+.app-loading-wave-front {
+    fill: #8ecae6;
+    opacity: 0.4;
 }
 
 .app-loading-orb {
@@ -72,15 +134,12 @@
     filter: drop-shadow(0 12px 14px #02304733);
 }
 
-.app-loading-eyebrow {
-    margin: 0 0 13px;
-    color: var(--loading-muted);
-    font-size: 0.625rem;
-    font-weight: 500;
-    letter-spacing: 0.2em;
-}
-
 .app-loading-brand {
+    position: absolute;
+    top: calc(50% + 76px);
+    left: 0;
+    right: 0;
+    white-space: nowrap;
     margin: 0;
     color: var(--loading-ink);
     font-size: 2rem;
@@ -90,37 +149,29 @@
 }
 
 .app-loading-dot {
-    color: #fb8500;
+    display: inline-block;
+    width: 0.18em;
+    height: 0.18em;
+    margin-left: 0.06em;
+    background: #fb8500;
 }
 
 .app-loading-message {
-    margin: 14px 0 28px;
+    position: absolute;
+    top: calc(50% + 117px);
+    left: 24px;
+    right: 24px;
+    margin: 10px 0 24px;
     color: var(--loading-muted);
     font-size: 0.8125rem;
     line-height: 1.8;
 }
 
-.app-loading-track {
-    width: 144px;
-    height: 3px;
-    overflow: hidden;
-    border-radius: 10px;
-    background: #8ecae624;
-}
-
-.app-loading-track span {
-    display: block;
-    width: 50%;
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, #8ecae633, #8ecae6, #8ecae633);
-    animation: loading-drift 1.8s ease-in-out infinite;
-}
-
 .app-loading-footer {
     position: absolute;
     right: 24px;
-    bottom: max(28px, env(safe-area-inset-bottom));
+    bottom: max(20px, env(safe-area-inset-bottom));
+    z-index: 1;
     left: 24px;
     margin: 0;
     color: var(--loading-muted);
@@ -129,19 +180,45 @@
     letter-spacing: 0.02em;
 }
 
-@keyframes loading-orbit {
-    to {
-        transform: rotate(360deg);
+@keyframes loading-water-travel {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(100%, 0, 0); }
+}
+
+@keyframes loading-water-impact {
+    0% {
+        transform: scale(0.8, 1.2);
+    }
+    18% {
+        transform: scale(1, 1);
+    }
+    82% {
+        transform: scale(1, 1);
+    }
+    100% {
+        transform: scale(0.8, 1.2);
     }
 }
 
-@keyframes loading-drift {
-    0%,
-    100% {
-        transform: translateX(-100%);
+@keyframes loading-splash-left {
+    0%, 100% { opacity: 0.65; transform: translate(0, 0); }
+    12% { opacity: 0; transform: translate(12px, -20px); }
+    13%, 92% { opacity: 0; }
+}
+
+@keyframes loading-splash-right {
+    0%, 44% { opacity: 0; transform: translate(0, 0); }
+    50% { opacity: 0.65; transform: translate(0, 0); }
+    62% { opacity: 0; transform: translate(-12px, -20px); }
+    63%, 100% { opacity: 0; }
+}
+
+@keyframes loading-look {
+    from {
+        transform: translate(-4px, 2px);
     }
-    50% {
-        transform: translateX(200%);
+    to {
+        transform: translate(4px, 2px);
     }
 }
 
@@ -149,27 +226,33 @@
     .app-loading-art {
         width: 120px;
         height: 120px;
-        margin-bottom: 12px;
-    }
-    .app-loading-orb {
-        width: 56px;
-        height: 56px;
     }
     .app-loading-message {
         margin-bottom: 16px;
     }
     .app-loading-footer {
-        position: static;
-        margin-top: 24px;
+        display: none;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .app-loading-orbit,
-    .app-loading-track span {
-        animation: none;
+    .app-loading {
+        transition: none;
     }
-    .app-loading-track span {
-        transform: translateX(50%);
+    .app-loading-orb,
+    .app-loading-wave-travel,
+    .app-loading-water,
+    .app-loading-eyes {
+        animation: none;
+        will-change: auto;
+    }
+    .app-loading-water {
+        left: 27.5%;
+        transform: none;
+    }
+    .app-loading-sea::before,
+    .app-loading-sea::after {
+        animation: none;
+        opacity: 0;
     }
 }

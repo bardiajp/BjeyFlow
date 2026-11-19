@@ -23,7 +23,6 @@ class Command(BaseCommand):
         subscriptions = PushSubscription.objects.filter(
             user__is_active=True,
             session__revoked_at__isnull=True,
-            session__expires_at__gt=now,
         ).select_related("user")
         for subscription in subscriptions.iterator():
             preferences = subscription.user.preferences

@@ -7,6 +7,7 @@ import { usePreferences } from '@/store/use-preferences';
 import { ConnectionGuard } from '@/components/connection-guard';
 import { SiteSettingsProvider } from './site-settings';
 import { PreferencesProvider } from './preferences';
+import { PushNotificationsProvider } from './push-notifications';
 
 export default function Providers({ children }: { children: ReactNode }) {
     const toastDuration = usePreferences((state) => state.toastDuration);
@@ -17,7 +18,11 @@ export default function Providers({ children }: { children: ReactNode }) {
                     <ConnectionGuard>
                         <SiteSettingsProvider>
                             <AuthProvider>
-                                <PreferencesProvider>{children}</PreferencesProvider>
+                                <PreferencesProvider>
+                                    <PushNotificationsProvider>
+                                        {children}
+                                    </PushNotificationsProvider>
+                                </PreferencesProvider>
                             </AuthProvider>
                         </SiteSettingsProvider>
                     </ConnectionGuard>
